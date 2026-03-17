@@ -1,0 +1,36 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+/* Prevent image stretching/tiling on large screens - maintain aspect ratio */
+img {
+  max-width: 100%;
+  object-position: center;
+}
+
+/* Samsung OM55N-DS (1920x1080) Floorstand Dual - Responsive scaling */
+html, body {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Scale content for 1920x1080 - use vh/vw for proportional layout */
+@media (min-width: 1920px) and (min-height: 1080px) {
+  html {
+    font-size: 16px;
+  }
+}
