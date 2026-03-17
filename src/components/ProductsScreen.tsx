@@ -59,7 +59,7 @@ export function ProductsScreen({ onNavigate }: ScreenProps) {
             whileTap={{
               scale: 0.96
             }}
-            className="bg-white/90 dark:bg-white/[0.06] backdrop-blur-xl border border-gray-200 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-lg dark:shadow-2xl flex flex-col">
+            className="bg-white/[0.06] backdrop-blur-xl border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl flex flex-col">
             
               <div className="h-36 signage:h-48 w-full overflow-hidden relative">
                 <img
@@ -84,7 +84,7 @@ export function ProductsScreen({ onNavigate }: ScreenProps) {
                 </div>
                 <button
                   onClick={() => onNavigate('product-details', product.id)}
-                  className="mt-5 w-full bg-gray-100 dark:bg-white/[0.05] border border-[#FF6B4A]/50 text-[#FF6B4A] font-bold py-3 rounded-xl min-h-[48px] active:bg-[#FF6B4A]/20 transition-colors"
+                  className="mt-5 w-full bg-white/[0.05] border border-[#FF6B4A]/50 text-[#FF6B4A] font-bold py-3 rounded-xl min-h-[48px] active:bg-[#FF6B4A]/20 transition-colors"
                 >
                   View Details
                 </button>
