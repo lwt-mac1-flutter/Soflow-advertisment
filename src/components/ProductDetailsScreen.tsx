@@ -1,8 +1,20 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, MapPin, Phone, X } from 'lucide-react';
 import { BackButton } from './BackButton';
 import { products, formatProductPrice } from '../data/products';
-import { categoryLabel } from '../data/categories';
+
+/** Wholesale contact details (matches soflowrubioscorals.us contact page). */
+const WHOLESALE_CONTACT = {
+  addressLine1: '7341 N.W. 32nd Ave',
+  addressLine2: 'Miami, FL 33147, USA',
+  emailDisplay: 'Info@soflowrubioscorals.us',
+  emailMailto: 'mailto:info@soflowrubioscorals.us',
+  phones: [
+    { name: 'Anthony Rubio', tel: '+19547060081', display: '954-706-0081' },
+    { name: 'Alain Suarez', tel: '+17863940908', display: '786-394-0908' }
+  ] as const
+};
 
 interface ProductDetailsScreenProps {
   productId: number;
@@ -10,7 +22,17 @@ interface ProductDetailsScreenProps {
 }
 
 export function ProductDetailsScreen({ productId, onNavigate }: ProductDetailsScreenProps) {
+  const [contactOpen, setContactOpen] = useState(false);
   const product = products.find((p) => p.id === productId);
+
+  useEffect(() => {
+    if (!contactOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContactOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [contactOpen]);
 
   if (!product) {
     return (
@@ -47,72 +69,129 @@ export function ProductDetailsScreen({ productId, onNavigate }: ProductDetailsSc
               className="w-full h-full object-cover object-center min-w-0"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#050d1a] via-transparent to-transparent opacity-60" />
-            <div className="absolute top-4 right-4 flex flex-col items-end gap-0.5 rounded-2xl border border-white/20 bg-black/50 px-4 py-2 text-right shadow-md backdrop-blur-md">
-              {product.compareAtLabel && (
-                <span className="text-sm font-bold text-white/50 line-through">
-                  {product.compareAtLabel}
-                </span>
-              )}
-              <span className="text-xl font-black text-[#FF6B4A]">
-                {formatProductPrice(product)}
-              </span>
-              {product.wysiwyg !== false && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#00E5C3]">
-                  WYSIWYG
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Details Section */}
           <div className="p-6 signage:p-10 floor:p-12 display4k:p-16 flex-1 flex flex-col justify-center">
-            <h1 className="text-3xl signage:text-4xl floor:text-5xl display4k:text-6xl font-black text-white mb-4 tracking-tight">
+            <h1 className="text-3xl signage:text-4xl floor:text-5xl display4k:text-6xl font-black text-white mb-3 tracking-tight">
               {product.name}
             </h1>
-            <p className="text-lg signage:text-xl floor:text-2xl display4k:text-3xl text-white/70 font-medium mb-6 leading-relaxed">
+            <div className="mb-4 flex flex-wrap items-baseline gap-3">
+              <span className="text-2xl font-black text-[#FF6B4A] signage:text-3xl floor:text-4xl">
+                {formatProductPrice(product)}
+              </span>
+              {product.compareAtLabel && (
+                <span className="text-lg font-bold text-white/45 line-through">
+                  {product.compareAtLabel}
+                </span>
+              )}
+            </div>
+            <p className="text-lg signage:text-xl floor:text-2xl display4k:text-3xl text-white/70 font-medium mb-8 leading-relaxed">
               {product.longDesc ?? product.desc}
             </p>
 
-            {/* Specs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white/[0.06] rounded-2xl p-4 border border-white/[0.08]">
-                <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">
-                  Category
-                </p>
-                <p className="text-lg font-bold text-white">{categoryLabel(product.categoryId)}</p>
-              </div>
-              {product.origin && (
-                <div className="bg-white/[0.06] rounded-2xl p-4 border border-white/[0.08]">
-                  <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">
-                    Origin
-                  </p>
-                  <p className="text-lg font-bold text-white">{product.origin}</p>
-                </div>
-              )}
-              {product.careLevel && (
-                <div className="bg-white/[0.06] rounded-2xl p-4 border border-white/[0.08]">
-                  <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">
-                    Care Level
-                  </p>
-                  <p className="text-lg font-bold text-white">{product.careLevel}</p>
-                </div>
-              )}
-              {product.lighting && (
-                <div className="bg-white/[0.06] rounded-2xl p-4 border border-white/[0.08]">
-                  <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">
-                    Lighting
-                  </p>
-                  <p className="text-lg font-bold text-white">{product.lighting}</p>
-                </div>
-              )}
-            </div>
-
-            <button type="button" className="touch-manipulation w-full signage:w-auto signage:min-w-[200px] floor:min-w-[280px] bg-[#FF6B4A] hover:bg-[#ff7a5c] text-white font-bold py-4 floor:py-5 px-8 floor:px-10 floor:text-xl display4k:text-2xl rounded-xl transition-colors shadow-[0_0_20px_rgba(255,107,74,0.3)] min-h-[56px] floor:min-h-[72px]">
+            <button
+              type="button"
+              onClick={() => setContactOpen(true)}
+              className="touch-manipulation w-full signage:w-auto signage:min-w-[200px] floor:min-w-[280px] bg-[#FF6B4A] hover:bg-[#ff7a5c] text-white font-bold py-4 floor:py-5 px-8 floor:px-10 floor:text-xl display4k:text-2xl rounded-xl transition-colors shadow-[0_0_20px_rgba(255,107,74,0.3)] min-h-[56px] floor:min-h-[72px]">
               Contact for Wholesale Pricing
             </button>
           </div>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {contactOpen && (
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-modal-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-0 sm:p-4 floor:p-6">
+            <button
+              type="button"
+              aria-label="Close"
+              className="absolute inset-0 border-0 bg-[#020814]/88 backdrop-blur-md"
+              onClick={() => setContactOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-white/[0.12] bg-[#050d1a] shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_32px_90px_rgba(0,0,0,0.75)] sm:max-w-lg sm:rounded-3xl floor:max-w-xl">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0a1524]/95 px-4 py-3 floor:px-5 floor:py-4">
+                <h2
+                  id="contact-modal-title"
+                  className="text-base font-black text-white floor:text-lg">
+                  Contact us
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setContactOpen(false)}
+                  className="touch-manipulation flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.08] text-white transition-colors hover:bg-white/[0.12] floor:h-12 floor:w-12">
+                  <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                </button>
+              </div>
+
+              <div className="px-5 py-6 floor:px-7 floor:py-8">
+                <div className="space-y-8 text-white">
+                  <section>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-[#00E5C3] floor:text-base">
+                      <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                      Address
+                    </h3>
+                    <p className="whitespace-pre-line text-base font-semibold leading-relaxed text-white/90 floor:text-lg">
+                      {WHOLESALE_CONTACT.addressLine1}
+                      {'\n'}
+                      {WHOLESALE_CONTACT.addressLine2}
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-[#00E5C3] floor:text-base">
+                      <Mail className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                      Email Us
+                    </h3>
+                    <a
+                      href={WHOLESALE_CONTACT.emailMailto}
+                      className="text-base font-semibold text-white underline decoration-[#00E5C3]/50 underline-offset-4 transition-colors hover:text-[#00E5C3] floor:text-lg">
+                      {WHOLESALE_CONTACT.emailDisplay}
+                    </a>
+                  </section>
+
+                  <section>
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-[#00E5C3] floor:text-base">
+                      <Phone className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                      Call Us
+                    </h3>
+                    <ul className="space-y-4">
+                      {WHOLESALE_CONTACT.phones.map(({ name, tel, display }) => (
+                        <li key={name}>
+                          <a
+                            href={`tel:${tel}`}
+                            className="group flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg py-1 text-left transition-colors hover:text-[#00E5C3]">
+                            <span className="font-semibold text-white/90 group-hover:text-[#00E5C3] floor:text-lg">
+                              {name}
+                            </span>
+                            <span className="font-bold tabular-nums text-white group-hover:text-[#00E5C3] floor:text-lg">
+                              {display}
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

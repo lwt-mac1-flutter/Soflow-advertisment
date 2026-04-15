@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   MapPin as MapPinIcon,
   X as XIcon,
   Droplets,
   Package,
   Leaf,
-  Sparkles
+  Sparkles,
+  Globe2,
+  Route,
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react';
 import { ScreenProps } from '../types';
 import { BackButton } from './BackButton';
+
+type MarkerTone = 'coral' | 'teal' | 'blue' | 'amber';
 
 type ImportLocation = {
   id: string;
   name: string;
   top: string;
   left: string;
+  tone: MarkerTone;
   desc: string;
   specialties: string[];
   waterNote: string;
@@ -23,12 +30,34 @@ type ImportLocation = {
   sustainability: string;
 };
 
+const toneRing: Record<MarkerTone, string> = {
+  coral: 'shadow-[0_0_0_2px_rgba(255,107,74,0.5)]',
+  teal: 'shadow-[0_0_0_2px_rgba(0,229,195,0.45)]',
+  blue: 'shadow-[0_0_0_2px_rgba(74,158,255,0.5)]',
+  amber: 'shadow-[0_0_0_2px_rgba(255,184,77,0.5)]'
+};
+
+const toneFill: Record<MarkerTone, string> = {
+  coral: 'text-[#FF6B4A]',
+  teal: 'text-[#00E5C3]',
+  blue: 'text-[#4A9EFF]',
+  amber: 'text-[#FFB84D]'
+};
+
+const tonePulse: Record<MarkerTone, string> = {
+  coral: 'bg-[#FF6B4A]',
+  teal: 'bg-[#00E5C3]',
+  blue: 'bg-[#4A9EFF]',
+  amber: 'bg-[#FFB84D]'
+};
+
 const locations: ImportLocation[] = [
-  {
-    id: 'indo',
-    name: 'Indonesia',
-    top: '55%',
-    left: '75%',
+{
+  id: 'indo',
+  name: 'Indonesia',
+  top: '55%',
+  left: '75%',
+    tone: 'teal',
     desc: 'Rich biodiversity, premium cultured corals.',
     specialties: [
       'Maricultured stony corals',
@@ -41,12 +70,13 @@ const locations: ImportLocation[] = [
       'Air freight with temp-mapped staging, short dock exposure, coordinated arrivals.',
     sustainability:
       'Farm-raised and quota-managed wild stock through vetted partners and clear paperwork.'
-  },
-  {
-    id: 'fiji',
-    name: 'Fiji',
-    top: '65%',
-    left: '88%',
+},
+{
+  id: 'fiji',
+  name: 'Fiji',
+  top: '65%',
+  left: '88%',
+    tone: 'coral',
     desc: 'Famous for vibrant soft corals and live rock.',
     specialties: [
       'Soft corals & leathers',
@@ -59,12 +89,13 @@ const locations: ImportLocation[] = [
       'Direct routes, cold-style packing, dispatch photos so you see what shipped.',
     sustainability:
       'CITES-aligned exports and reef areas co-managed with local villages.'
-  },
-  {
-    id: 'tonga',
-    name: 'Tonga',
-    top: '68%',
-    left: '92%',
+},
+{
+  id: 'tonga',
+  name: 'Tonga',
+  top: '68%',
+  left: '92%',
+    tone: 'coral',
     desc: 'Unique branching and plating species.',
     specialties: [
       'Branching Acropora',
@@ -77,12 +108,13 @@ const locations: ImportLocation[] = [
       'Hub consolidations (e.g. LAX) for predictable handoffs and shorter transit.',
     sustainability:
       'Sizing and grading rules plus suppliers with documented ethics.'
-  },
-  {
-    id: 'aus',
-    name: 'Australia',
-    top: '75%',
-    left: '82%',
+},
+{
+  id: 'aus',
+  name: 'Australia',
+  top: '75%',
+  left: '82%',
+    tone: 'blue',
     desc: 'Home to the Great Barrier Reef, strict quotas.',
     specialties: ['GBR lineages', 'Premium LPS', 'Seasonal rarity lists'],
     waterNote:
@@ -91,12 +123,13 @@ const locations: ImportLocation[] = [
       'Heavy documentation, optional quarantine and health checks before you receive stock.',
     sustainability:
       'Government caps, licensing, and traceability—availability tracks the law.'
-  },
-  {
-    id: 'redsea',
-    name: 'Red Sea',
-    top: '45%',
-    left: '55%',
+},
+{
+  id: 'redsea',
+  name: 'Red Sea',
+  top: '45%',
+  left: '55%',
+    tone: 'amber',
     desc: 'Hardy species adapted to high salinity.',
     specialties: [
       'Hardy stony corals',
@@ -109,12 +142,13 @@ const locations: ImportLocation[] = [
       'Middle East / EU consolidators into US and EU with tight handoff timing.',
     sustainability:
       'Mariculture and ranching supplement tightly controlled wild harvest.'
-  },
-  {
-    id: 'hawaii',
-    name: 'Hawaii',
-    top: '50%',
-    left: '15%',
+},
+{
+  id: 'hawaii',
+  name: 'Hawaii',
+  top: '50%',
+  left: '15%',
+    tone: 'blue',
     desc: 'Endemic species and sustainable practices.',
     specialties: [
       'Pacific island specialties',
@@ -133,6 +167,7 @@ const locations: ImportLocation[] = [
     name: 'Maldives',
     top: '56%',
     left: '63%',
+    tone: 'teal',
     desc: 'Atoll reefs with crystal water and boutique mariculture.',
     specialties: ['Acropora gardens', 'LPS islands', 'Cleanup & inverts'],
     waterNote:
@@ -147,6 +182,7 @@ const locations: ImportLocation[] = [
     name: 'Philippines',
     top: '49%',
     left: '81%',
+    tone: 'coral',
     desc: 'Coral Triangle diversity with strong mariculture and wild specialty.',
     specialties: ['SPS & Acro', 'Softies & zoas', 'Rare LPS'],
     waterNote:
@@ -161,6 +197,7 @@ const locations: ImportLocation[] = [
     name: 'Kenya',
     top: '59%',
     left: '57%',
+    tone: 'amber',
     desc: 'Western Indian Ocean fringing reefs with hardy Indo-Pacific species.',
     specialties: ['Hardy stony corals', 'Soft corals', 'Indian Ocean classics'],
     waterNote:
@@ -175,6 +212,7 @@ const locations: ImportLocation[] = [
     name: 'Bahamas',
     top: '41%',
     left: '26%',
+    tone: 'blue',
     desc: 'Caribbean clarity—stony corals and iconic reef livestock.',
     specialties: ['Caribbean stony', 'Ricordea & softies', 'Atlantic specialties'],
     waterNote:
@@ -189,6 +227,7 @@ const locations: ImportLocation[] = [
     name: 'Palau',
     top: '47%',
     left: '84%',
+    tone: 'teal',
     desc: 'Micronesian reefs with strict protection and premium rare strains.',
     specialties: ['Micronesian Acro', 'Unique color lines', 'Protected-area ethics'],
     waterNote:
@@ -203,6 +242,7 @@ const locations: ImportLocation[] = [
     name: 'Vietnam',
     top: '50%',
     left: '72%',
+    tone: 'amber',
     desc: 'Fast-growing farms and coastal mariculture along the South China Sea.',
     specialties: ['Farm-raised SPS', 'Cultured LPS', 'Budget-friendly colonies'],
     waterNote:
@@ -214,268 +254,507 @@ const locations: ImportLocation[] = [
   }
 ];
 
-export function ImportMapScreen({ onNavigate }: ScreenProps) {
-  const [activeLocation, setActiveLocation] = useState<string | null>(null);
+const stats = [
+  {
+    label: 'Source regions',
+    value: `${locations.length}`,
+    hint: 'Active origins',
+    icon: Globe2,
+    color: 'text-[#00E5C3]',
+    bg: 'bg-[#00E5C3]/12',
+    border: 'border-[#00E5C3]/25'
+  },
+  {
+    label: 'Trade corridors',
+    value: '24+',
+    hint: 'Air & sea lanes',
+    icon: Route,
+    color: 'text-[#FF6B4A]',
+    bg: 'bg-[#FF6B4A]/12',
+    border: 'border-[#FF6B4A]/25'
+  },
+  {
+    label: 'Traceability',
+    value: '100%',
+    hint: 'Documented chain',
+    icon: ShieldCheck,
+    color: 'text-[#4A9EFF]',
+    bg: 'bg-[#4A9EFF]/12',
+    border: 'border-[#4A9EFF]/25'
+  }
+] as const;
+
+function RegionDetailBody({
+  loc,
+  onClose
+}: {
+  loc: ImportLocation;
+  onClose: () => void;
+}) {
   return (
-    <div className="flex flex-col min-h-[100dvh] min-h-screen w-full bg-transparent">
-      {/* Header */}
-      <div className="bg-white/[0.03] backdrop-blur-2xl border-b border-white/[0.08] pt-6 pb-4 px-6 signage:pt-8 signage:pb-5 signage:px-12 floor:px-16 display4k:px-24 z-20 relative">
-        <h2 className="text-2xl signage:text-3xl floor:text-4xl font-black text-white mb-2 tracking-wide">
-          Global Sources
-        </h2>
-        <div className="w-16 h-1 bg-[#00E5C3] rounded-full mb-6 shadow-[0_0_10px_rgba(0,229,195,0.5)]" />
-        <BackButton onClick={() => onNavigate('main')} label="Back to Menu" />
+    <>
+      <div className="flex items-start gap-3 pr-10">
+        <div
+          className={`mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 ${toneRing[loc.tone]} bg-[#050d1a]/80`}>
+          <MapPinIcon
+            className={toneFill[loc.tone]}
+            size={26}
+            fill="#050d1a"
+            strokeWidth={2}
+            aria-hidden
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#00E5C3] signage:text-[11px]">
+            Source region
+          </p>
+          <h3
+            id="import-region-title"
+            className="text-xl font-black tracking-tight text-white signage:text-2xl floor:text-3xl">
+            {loc.name}
+          </h3>
+          <p className="mt-0.5 text-xs font-medium text-white/45 floor:text-sm">
+            Coral &amp; livestock origin
+          </p>
+        </div>
       </div>
 
-      {/* Map Area */}
-      <div className="flex-1 min-h-[clamp(260px,52vh,56rem)] floor:min-h-[clamp(320px,50vh,64rem)] portrait:min-h-[min(45vh,520px)] w-full relative overflow-hidden">
-        {/* Map Background Image */}
-        <div className="absolute inset-0 opacity-20 mix-blend-screen">
+      <div className="mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3">
+        <p className="text-sm font-medium leading-relaxed text-white/88 signage:text-base">
+          {loc.desc}
+        </p>
+      </div>
+
+      <div className="mt-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 shrink-0 text-[#FFB84D]" strokeWidth={2.25} aria-hidden />
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 floor:text-xs">
+            Specialties
+          </span>
+        </div>
+        <ul className="flex flex-wrap gap-2">
+          {loc.specialties.map((tag) => (
+            <li key={tag}>
+              <span className="inline-block rounded-lg border border-[#00E5C3]/30 bg-[#00E5C3]/10 px-2.5 py-1 text-[10px] font-semibold text-[#b8fff0] signage:text-[11px] floor:text-xs">
+                {tag}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 floor:p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Droplets className="h-4 w-4 shrink-0 text-[#4A9EFF]" strokeWidth={2.25} aria-hidden />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/55 floor:text-xs">
+              Water &amp; acclimation
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-white/78 floor:text-sm">{loc.waterNote}</p>
+        </div>
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 floor:p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Package className="h-4 w-4 shrink-0 text-[#00E5C3]" strokeWidth={2.25} aria-hidden />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/55 floor:text-xs">
+              Logistics &amp; handling
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-white/78 floor:text-sm">{loc.supplyChain}</p>
+        </div>
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 floor:p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Leaf className="h-4 w-4 shrink-0 text-[#7AE582]" strokeWidth={2.25} aria-hidden />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/55 floor:text-xs">
+              Sustainability
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-white/78 floor:text-sm">{loc.sustainability}</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-6 flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.06] py-3.5 text-sm font-bold text-white transition-colors hover:bg-white/[0.1] lg:hidden floor:py-4 floor:text-base">
+        Close details
+        <XIcon className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+    </>
+  );
+}
+
+function sidebarContentTransition(reduceMotion: boolean | null) {
+  if (reduceMotion) {
+    return {
+      detail: {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.2 }
+      },
+      list: {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.2 }
+      }
+    };
+  }
+  return {
+    detail: {
+      initial: { opacity: 0, x: 36 },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: -28 },
+      transition: { type: 'spring', stiffness: 380, damping: 32, mass: 0.85 }
+    },
+    list: {
+      initial: { opacity: 0, x: -28 },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: 32 },
+      transition: { type: 'spring', stiffness: 360, damping: 32, mass: 0.85 }
+    }
+  };
+}
+
+export function ImportMapScreen({ onNavigate }: ScreenProps) {
+  const [activeLocation, setActiveLocation] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const sideTx = sidebarContentTransition(reduceMotion);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  const closePanel = useCallback(() => setActiveLocation(null), []);
+
+  const active = activeLocation ? locations.find((l) => l.id === activeLocation) : null;
+
+  return (
+    <div className="flex min-h-[100dvh] min-h-screen w-full flex-col bg-transparent">
+      <header className="relative z-20 border-b border-white/[0.08] bg-[#050d1a]/70 px-4 py-4 backdrop-blur-2xl signage:px-10 signage:py-5 floor:px-14 floor:py-6 display4k:px-20">
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 floor:max-w-[2200px] display4k:max-w-[2800px] lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#00E5C3]/30 bg-[#00E5C3]/10 px-3 py-1">
+              <Globe2 className="h-3.5 w-3.5 text-[#00E5C3]" strokeWidth={2.5} aria-hidden />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#9ef7e8] signage:text-[10px]">
+                Supply network
+              </span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-white signage:text-3xl floor:text-4xl display4k:text-5xl">
+              Global{' '}
+              <span className="bg-gradient-to-r from-[#00E5C3] via-white to-[#4A9EFF] bg-clip-text text-transparent">
+                Sources
+              </span>
+            </h1>
+            <p className="mt-2 max-w-xl text-sm font-medium text-white/50 signage:text-base floor:text-lg">
+              Tap any pin to see specialties, logistics, and how we protect reef health from reef to
+              retailer.
+            </p>
+          </motion.div>
+          <div className="w-full shrink-0 lg:max-w-md">
+            <BackButton onClick={() => onNavigate('main')} />
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 signage:px-10 signage:py-7 floor:max-w-[2200px] floor:px-14 floor:py-8 display4k:max-w-[2800px] display4k:px-20">
+        {/* Stats */}
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3 floor:mb-7 floor:gap-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className={`relative overflow-hidden rounded-2xl border ${stat.border} bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-4 shadow-lg backdrop-blur-xl floor:rounded-3xl floor:p-5`}>
+              <div className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl ${stat.bg} floor:h-14 floor:w-14`}>
+                <stat.icon className={`h-5 w-5 floor:h-6 floor:w-6 ${stat.color}`} strokeWidth={2.25} />
+              </div>
+              <div className={`text-3xl font-black tabular-nums ${stat.color} floor:text-4xl`}>
+                {stat.value}
+              </div>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/80 floor:text-xs">
+                {stat.label}
+              </div>
+              <p className="mt-0.5 text-[11px] font-medium text-white/40 floor:text-sm">{stat.hint}</p>
+            </div>
+          ))}
+      </div>
+
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch lg:gap-6 floor:gap-8">
+          {/* Map frame */}
+          <div className="relative min-h-[min(52vh,560px)] flex-1 overflow-hidden rounded-[1.75rem] border border-white/[0.1] bg-[#050d1a] shadow-[0_28px_80px_rgba(0,0,0,0.45)] floor:min-h-[min(48vh,640px)] floor:rounded-[2rem] lg:min-h-[min(58vh,720px)]">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.35]"
+              style={{
+                backgroundImage: `linear-gradient(rgba(0,229,195,0.06) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(0,229,195,0.06) 1px, transparent 1px)`,
+                backgroundSize: '48px 48px'
+              }}
+              aria-hidden
+            />
+            <div className="absolute inset-0 opacity-25 mix-blend-screen">
           <img
             src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1920&q=90"
-            alt="World Map"
-            className="w-full h-full object-cover object-center" />
-          
+                alt=""
+                className="h-full w-full object-cover object-center"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00E5C3]/[0.07] via-transparent to-[#FF6B4A]/[0.06]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#050d1a] via-transparent to-[#050d1a]/95" />
+
+            <div className="absolute left-4 top-4 z-[5] max-w-[min(90%,280px)] rounded-xl border border-white/10 bg-[#050d1a]/75 px-3 py-2 backdrop-blur-md floor:left-5 floor:top-5 floor:px-4 floor:py-2.5">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 floor:text-[10px]">
+                Legend
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-bold text-white/55 floor:text-[10px]">
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-[#FF6B4A]" /> Pacific hot spots
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-[#00E5C3]" /> Indo &amp; Indian Ocean
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-[#4A9EFF]" /> Atlantic &amp; domestic
+                </span>
+              </div>
         </div>
 
-        {/* Teal Overlay */}
-        <div className="absolute inset-0 bg-[#00E5C3]/5 mix-blend-overlay" />
-
-        {/* Map Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050d1a] via-transparent to-[#050d1a]" />
-
-        {/* Markers */}
-        {locations.map((loc, i) =>
+            {locations.map((loc, i) => (
         <motion.div
           key={loc.id}
           className="absolute z-10"
-          style={{
-            top: loc.top,
-            left: loc.left
-          }}
-          initial={{
-            scale: 0,
-            opacity: 0
-          }}
-          animate={{
-            scale: 1,
-            opacity: 1
-          }}
-          transition={{
-            delay: i * 0.1 + 0.3,
-            type: 'spring'
-          }}>
-          
+                style={{ top: loc.top, left: loc.left }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: i * 0.06 + 0.2, type: 'spring', stiffness: 260, damping: 22 }}>
             <motion.button
-            whileTap={{
-              scale: 0.9
-            }}
+                  whileTap={{ scale: 0.92 }}
             onClick={() => setActiveLocation(loc.id)}
-            className="relative -ml-4 -mt-8 flex flex-col items-center group min-h-[60px] min-w-[60px] justify-center">
-            
-              {/* Double Pulse effect */}
+                  aria-label={`Open details for ${loc.name}`}
+                  className="relative -ml-4 -mt-8 flex min-h-[56px] min-w-[56px] flex-col items-center justify-center touch-manipulation group floor:min-h-[64px] floor:min-w-[64px]">
               <motion.div
-              className="absolute w-10 h-10 bg-[#FF6B4A] rounded-full opacity-30 blur-sm"
-              animate={{
-                scale: [1, 2.5],
-                opacity: [0.5, 0]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: 'easeOut'
-              }} />
-            
+                    className={`absolute h-10 w-10 rounded-full opacity-30 blur-sm ${tonePulse[loc.tone]}`}
+                    animate={{ scale: [1, 2.4], opacity: [0.45, 0] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+                  />
               <motion.div
-              className="absolute w-6 h-6 bg-[#FF6B4A] rounded-full opacity-50"
-              animate={{
-                scale: [1, 1.8],
-                opacity: [0.8, 0]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: 'easeOut',
-                delay: 0.5
-              }} />
-            
+                    className={`absolute h-6 w-6 rounded-full opacity-50 ${tonePulse[loc.tone]}`}
+                    animate={{ scale: [1, 1.75], opacity: [0.75, 0] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut', delay: 0.45 }}
+                  />
               <MapPinIcon
-              size={36}
-              className="text-[#FF6B4A] relative z-10 drop-shadow-[0_0_10px_rgba(255,107,74,0.8)]"
+                    size={34}
+                    className={`relative z-10 ${toneFill[loc.tone]} drop-shadow-[0_0_14px_rgba(0,0,0,0.85)] group-hover:scale-105 floor:h-10 floor:w-10`}
               fill="#050d1a"
-              strokeWidth={2.5} />
-            
-              <span className="mt-2 text-white font-bold text-xs bg-white/[0.1] border border-white/20 px-3 py-1.5 rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.5)] whitespace-nowrap tracking-wider">
+                    strokeWidth={2.5}
+                  />
+                  <span
+                    className={`mt-1.5 whitespace-nowrap rounded-full border border-white/15 bg-[#050d1a]/80 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white shadow-lg backdrop-blur-md floor:px-3 floor:text-xs ${
+                      activeLocation === loc.id ? 'ring-2 ring-[#00E5C3]/60' : ''
+                    }`}>
                 {loc.name}
               </span>
             </motion.button>
           </motion.div>
-        )}
+            ))}
+          </div>
 
-        {/* Info Popup */}
+          {/* Desktop side panel — content slides in when a region is selected */}
+          <aside className="relative hidden w-full shrink-0 flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.09] bg-[#0a1524]/70 shadow-[0_24px_64px_rgba(0,0,0,0.35)] backdrop-blur-xl lg:flex lg:w-[380px] floor:w-[420px] display4k:w-[480px] floor:rounded-[2rem]">
         <AnimatePresence>
-          {activeLocation &&
+              {active && !reduceMotion && (
+          <motion.div
+                  key={active.id}
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit]"
+                  initial={{ opacity: 0.9 }}
+                  animate={{ opacity: 0 }}
+                  transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    boxShadow: 'inset 0 0 0 2px rgba(0,229,195,0.55)',
+                    background: 'linear-gradient(90deg, rgba(0,229,195,0.08) 0%, transparent 45%)'
+                  }}
+                />
+              )}
+            </AnimatePresence>
+
+            <motion.div
+              className="relative z-[2] flex min-h-0 flex-1 flex-col"
+              initial={false}
+              custom={activeLocation}
+              variants={{
+                still: { x: 0 },
+                bump: (id: string | null) => ({
+                  x: id ? [18, 0] : 0,
+                  transition: { type: 'spring', stiffness: 440, damping: 32 }
+                })
+              }}
+              animate={reduceMotion ? 'still' : 'bump'}>
+              <div className="min-h-[5.5rem] border-b border-white/[0.07] px-5 py-4 floor:min-h-[5.75rem] floor:px-6 floor:py-5">
+                <h2 className="text-xs font-black uppercase tracking-[0.22em] text-white/40 floor:text-sm">
+                  Region details
+                </h2>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.p
+                    key={active?.id ?? 'placeholder'}
+                    initial={
+                      reduceMotion
+                        ? { opacity: 0 }
+                        : { opacity: 0, y: 10, filter: 'blur(4px)' }
+                    }
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={
+                      reduceMotion
+                        ? { opacity: 0 }
+                        : { opacity: 0, y: -8, filter: 'blur(4px)' }
+                    }
+                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-1 text-sm font-bold text-white floor:text-base">
+                    {active ? active.name : 'Select a source'}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 floor:px-6 floor:py-5">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {active ? (
+                      <motion.div
+                        key={active.id}
+                        {...sideTx.detail}
+                        className="flex flex-col">
+                        <RegionDetailBody loc={active} onClose={closePanel} />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="region-list"
+                        {...sideTx.list}
+                        className="flex flex-1 flex-col justify-center">
+                        <p className="text-sm leading-relaxed text-white/45 floor:text-base">
+                          Choose a pin on the map or pick a region from the list below to see
+                          specialties, water notes, and logistics.
+                        </p>
+                        <ul className="mt-6 max-h-[min(42vh,420px)] space-y-2 overflow-y-auto pr-1">
+                          {locations.map((loc) => (
+                            <li key={loc.id}>
+                <button
+                                type="button"
+                                onClick={() => setActiveLocation(loc.id)}
+                                className="flex w-full touch-manipulation items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-left text-sm font-semibold text-white transition-colors hover:border-[#00E5C3]/35 hover:bg-white/[0.07]">
+                                <span className="flex items-center gap-2">
+                                  <span
+                                    className={`h-2 w-2 shrink-0 rounded-full ${tonePulse[loc.tone]}`}
+                                  />
+                                  {loc.name}
+                                </span>
+                                <ChevronRight className="h-4 w-4 shrink-0 text-white/35" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <AnimatePresence initial={false}>
+                  {active && (
+                    <motion.div
+                      key="clear-footer"
+                      initial={
+                        reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }
+                      }
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      className="shrink-0 border-t border-white/[0.07] p-3 floor:p-4">
+                      <button
+                        type="button"
+                        onClick={closePanel}
+                        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.05] py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 transition-colors hover:bg-white/[0.09]">
+                        Clear selection
+                </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+                       </motion.div>
+          </aside>
+                        </div>
+
+        {/* Quick jump chips */}
+        <div className="mt-5 floor:mt-7">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/35 floor:text-xs">
+            Jump to region
+          </p>
+          <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 pt-1 [scrollbar-width:thin]">
+            {locations.map((loc) => (
+              <button
+                key={loc.id}
+                type="button"
+                onClick={() => setActiveLocation(loc.id)}
+                className={`shrink-0 touch-manipulation rounded-full border px-3.5 py-2 text-xs font-bold transition-all floor:px-4 floor:py-2.5 floor:text-sm ${
+                  activeLocation === loc.id
+                    ? `border-white/25 bg-white/[0.12] text-white ${toneRing[loc.tone]}`
+                    : 'border-white/[0.1] bg-white/[0.04] text-white/70 hover:border-white/20 hover:bg-white/[0.07]'
+                }`}>
+                          {loc.name}
+              </button>
+            ))}
+          </div>
+        </div>
+                      </div>
+
+      {/* Mobile / tablet modal */}
+      <AnimatePresence>
+        {activeLocation && !isDesktop && active && (
           <motion.div
             key="import-detail"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 z-30 flex items-center justify-center p-4 signage:p-6 floor:p-8">
-            
-              <button
+            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center lg:hidden">
+            <button
               type="button"
               aria-label="Close region details"
-              className="absolute inset-0 bg-[#020814]/85 backdrop-blur-md border-0 cursor-default"
-              onClick={() => setActiveLocation(null)} />
-            
-              <motion.div
+              className="absolute inset-0 cursor-default border-0 bg-[#020814]/88 backdrop-blur-md"
+              onClick={closePanel}
+            />
+            <motion.div
               role="dialog"
               aria-modal="true"
               aria-labelledby="import-region-title"
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              transition={{
-                type: 'spring',
-                stiffness: 420,
-                damping: 32
-              }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative z-10 w-full max-w-md floor:max-w-lg display4k:max-w-xl h-[32rem] signage:h-[34rem] floor:h-[36rem] display4k:h-[38rem] flex flex-col overflow-hidden rounded-2xl floor:rounded-3xl shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_28px_90px_rgba(0,0,0,0.65),0_0_60px_rgba(0,229,195,0.12)]">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#050d1a] to-[#030810]" />
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#FF6B4A] via-[#00E5C3] to-[#4A9EFF]" />
-                <div className="absolute -right-16 -top-24 h-48 w-48 rounded-full bg-[#00E5C3]/15 blur-3xl pointer-events-none" />
-                <div className="absolute -left-20 bottom-0 h-40 w-40 rounded-full bg-[#FF6B4A]/10 blur-3xl pointer-events-none" />
-
-                <div className="relative flex h-full flex-col p-4 pl-5 signage:p-5 signage:pl-6">
-                  <button
-                    type="button"
-                    onClick={() => setActiveLocation(null)}
-                    className="absolute top-3.5 right-3.5 z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/75 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white">
-                    <XIcon size={20} strokeWidth={2.25} />
-                  </button>
-
-                  {locations
-                    .filter((l) => l.id === activeLocation)
-                    .map((loc) => (
-                      <div
-                        key={loc.id}
-                        className="flex h-full min-h-0 flex-col">
-                        <p className="text-[10px] signage:text-[11px] font-bold uppercase tracking-[0.22em] text-[#00E5C3] mb-1.5">
-                          Source region
-                        </p>
-                        <div className="flex items-start gap-3 pr-11 mb-3">
-                          <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#FF6B4A]/35 bg-gradient-to-br from-[#FF6B4A]/20 to-[#00E5C3]/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-                            <MapPinIcon
-                              className="text-[#FF6B4A]"
-                              size={26}
-                              fill="#050d1a"
-                              strokeWidth={2}
-                              aria-hidden
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <h3
-                              id="import-region-title"
-                              className="text-xl signage:text-2xl font-black text-white tracking-tight leading-tight">
-                              {loc.name}
-                            </h3>
-                            <p className="mt-0.5 text-xs text-white/45 font-medium">
-                              Coral & livestock origin
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5 mb-3 shrink-0">
-                          <p className="text-white/85 text-sm signage:text-[15px] leading-snug">
-                            {loc.desc}
-                          </p>
-                        </div>
-
-                        <div className="mb-3 shrink-0">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Sparkles
-                              className="text-[#FFB84D] shrink-0"
-                              size={14}
-                              strokeWidth={2.25}
-                              aria-hidden
-                            />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
-                              Specialties
-                            </span>
-                          </div>
-                          <ul className="flex flex-wrap gap-1.5">
-                            {loc.specialties.map((tag) => (
-                              <li key={tag}>
-                                <span className="inline-block rounded-md border border-[#00E5C3]/25 bg-[#00E5C3]/10 px-2 py-0.5 text-[10px] signage:text-[11px] font-semibold text-[#b8fff0]">
-                                  {tag}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="flex min-h-0 flex-1 flex-col gap-2">
-                          <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5">
-                            <div className="flex items-center gap-1.5 mb-1 shrink-0">
-                              <Droplets
-                                className="text-[#4A9EFF] shrink-0"
-                                size={14}
-                                strokeWidth={2.25}
-                                aria-hidden
-                              />
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                                Water & acclimation
-                              </span>
-                            </div>
-                            <p className="min-h-0 flex-1 text-xs leading-snug text-white/75">
-                              {loc.waterNote}
-                            </p>
-                          </div>
-
-                          <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5">
-                            <div className="flex items-center gap-1.5 mb-1 shrink-0">
-                              <Package
-                                className="text-[#00E5C3] shrink-0"
-                                size={14}
-                                strokeWidth={2.25}
-                                aria-hidden
-                              />
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                                Logistics & handling
-                              </span>
-                            </div>
-                            <p className="min-h-0 flex-1 text-xs leading-snug text-white/75">
-                              {loc.supplyChain}
-                            </p>
-                          </div>
-
-                          <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5">
-                            <div className="flex items-center gap-1.5 mb-1 shrink-0">
-                              <Leaf
-                                className="text-[#7AE582] shrink-0"
-                                size={14}
-                                strokeWidth={2.25}
-                                aria-hidden
-                              />
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-white/55">
-                                Sustainability
-                              </span>
-                            </div>
-                            <p className="min-h-0 flex-1 text-xs leading-snug text-white/75">
-                              {loc.sustainability}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </motion.div>
+              className="relative z-10 mb-0 max-h-[min(88dvh,760px)] w-full max-w-lg overflow-y-auto rounded-t-[1.75rem] border border-white/[0.12] border-b-0 bg-[#050d1a] shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_-28px_90px_rgba(0,0,0,0.75)] sm:mb-0 sm:max-h-[min(82vh,680px)] sm:rounded-[2rem] sm:border-b floor:max-w-xl">
+              <div className="sticky top-0 z-10 flex justify-center bg-[#050d1a]/95 py-2 backdrop-blur-md sm:hidden">
+                <div className="h-1 w-10 rounded-full bg-white/20" aria-hidden />
+                    </div>
+              <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#FF6B4A] via-[#00E5C3] to-[#4A9EFF]" aria-hidden />
+              <button
+                type="button"
+                onClick={closePanel}
+                className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.08] text-white transition-colors hover:bg-white/[0.12] sm:top-4 sm:right-4 floor:h-12 floor:w-12">
+                <XIcon size={22} strokeWidth={2.25} />
+              </button>
+              <div className="relative p-5 pt-2 sm:p-7 sm:pt-6 floor:p-8">
+                <RegionDetailBody loc={active} onClose={closePanel} />
+              </div>
             </motion.div>
-          }
+          </motion.div>
+        )}
         </AnimatePresence>
       </div>
-    </div>);
-
+  );
 }

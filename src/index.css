@@ -29,6 +29,8 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Dark kiosk UI: avoid browser default (black) on any unstyled text */
+  color: rgb(241 245 249);
 }
 
 #root {

@@ -38,6 +38,19 @@ export function App() {
       }
     })
   };
+
+  /** No `y` transform — `transform` on an ancestor breaks `position:sticky` inside the screen. */
+  const productsScreenVariants = {
+    initial: { opacity: 0 },
+    animate: {
+      opacity: 1,
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] }
+    },
+    exit: {
+      opacity: 0,
+      transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+    }
+  };
   const renderScreen = () => {
     switch (currentScreen) {
       case 'main':
@@ -77,11 +90,13 @@ export function App() {
           <motion.div
             key={currentScreen === 'product-details' ? `product-${selectedProductId}` : currentScreen}
             custom={direction}
-            variants={screenVariants}
+            variants={
+              currentScreen === 'products' ? productsScreenVariants : screenVariants
+            }
             initial="initial"
             animate="animate"
             exit="exit"
-            className="relative z-10 w-full min-h-[100dvh] min-h-screen">
+            className="relative z-10 flex min-h-[100dvh] min-h-screen w-full flex-col">
             {renderScreen()}
           </motion.div>
         </AnimatePresence>

@@ -110,8 +110,10 @@ export function RegisterScreen({ onNavigate }: ScreenProps) {
               className={`${step.color}/20 w-12 h-12 signage:w-[60px] signage:h-[60px] rounded-2xl flex items-center justify-center shrink-0 ${step.shadow} border border-white/10 relative z-10`}>
               
                 <step.icon
-                size={32}
-                className={step.textColor.replace('text-', '')} />
+                  size={32}
+                  className={step.textColor}
+                  strokeWidth={2.25}
+                />
               
               </div>
 
