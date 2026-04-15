@@ -59,17 +59,17 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
     return () => clearInterval(timer);
   }, []);
   return (
-    <div className="flex flex-col h-full w-full bg-transparent">
+    <div className="flex flex-col min-h-[100dvh] min-h-screen w-full bg-transparent">
       {/* Header */}
-      <div className="bg-white/[0.03] backdrop-blur-2xl border-b border-white/[0.08] pt-6 pb-4 px-6 signage:pt-8 signage:pb-5 signage:px-12 z-20 relative">
-        <h2 className="text-2xl signage:text-3xl font-black text-white mb-2 tracking-wide">
+      <div className="bg-white/[0.03] backdrop-blur-2xl border-b border-white/[0.08] pt-6 pb-4 px-6 signage:pt-8 signage:pb-5 signage:px-12 floor:px-16 display4k:px-24 z-20 relative">
+        <h2 className="text-2xl signage:text-3xl floor:text-4xl font-black text-white mb-2 tracking-wide">
           Our Customers
         </h2>
         <div className="w-16 h-1 bg-[#4A9EFF] rounded-full mb-6 shadow-[0_0_10px_rgba(74,158,255,0.5)]" />
         <BackButton onClick={() => onNavigate('main')} />
       </div>
 
-      <div className="flex-1 flex flex-col px-4 py-6 signage:px-12 signage:py-8 overflow-y-auto max-w-[1400px] mx-auto w-full">
+      <div className="flex flex-col px-4 py-6 signage:px-12 signage:py-8 floor:px-16 display4k:px-24 max-w-[1400px] floor:max-w-[2200px] display4k:max-w-[2800px] mx-auto w-full pb-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3 signage:gap-4 mb-6 signage:mb-10">
           {stats.map((stat, i) =>
@@ -99,7 +99,7 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
         </div>
 
         {/* Testimonial Carousel */}
-        <div className="flex-1 flex flex-col justify-center relative min-h-[280px] signage:min-h-[380px]">
+        <div className="relative w-full min-h-[300px] h-[300px] signage:min-h-[380px] signage:h-[380px] floor:min-h-[440px] floor:h-[440px] display4k:min-h-[520px] display4k:h-[520px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}

@@ -75,23 +75,22 @@ const stepVariants = {
 };
 export function RegisterScreen({ onNavigate }: ScreenProps) {
   return (
-    <div className="flex flex-col h-full w-full bg-transparent">
+    <div className="flex flex-col min-h-[100dvh] min-h-screen w-full bg-transparent">
       {/* Header */}
-      <div className="bg-white/[0.03] backdrop-blur-2xl border-b border-white/[0.08] pt-6 pb-4 px-6 signage:pt-8 signage:pb-5 signage:px-12 z-20 relative">
-        <h2 className="text-2xl signage:text-3xl font-black text-white mb-2 tracking-wide">
+      <div className="bg-white/[0.03] backdrop-blur-2xl border-b border-white/[0.08] pt-6 pb-4 px-6 signage:pt-8 signage:pb-5 signage:px-12 floor:px-16 display4k:px-24 z-20 relative">
+        <h2 className="text-2xl signage:text-3xl floor:text-4xl font-black text-white mb-2 tracking-wide">
           How to Register
         </h2>
         <div className="w-16 h-1 bg-[#FFB84D] rounded-full mb-6 shadow-[0_0_10px_rgba(255,184,77,0.5)]" />
         <BackButton onClick={() => onNavigate('main')} />
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 signage:px-12 signage:py-8 pb-24 signage:pb-12 flex flex-col relative max-w-[1400px] mx-auto w-full">
+      <div className="px-4 py-6 signage:px-12 signage:py-8 floor:px-16 display4k:px-24 pb-24 signage:pb-12 flex flex-col relative max-w-[1400px] floor:max-w-[2200px] display4k:max-w-[2800px] mx-auto w-full">
         {/* Vertical Timeline Line */}
         <div className="absolute left-[38px] signage:left-[52px] top-12 bottom-48 w-0.5 bg-gradient-to-b from-[#4A9EFF] via-[#00E5C3] to-[#FF6B4A] opacity-30 z-0" />
 
         <motion.div
-          className="flex-1 flex flex-col gap-4 signage:gap-6 mb-6 signage:mb-10 relative z-10"
+          className="flex flex-col gap-4 signage:gap-6 mb-6 signage:mb-10 relative z-10"
           variants={containerVariants}
           initial="hidden"
           animate="visible">

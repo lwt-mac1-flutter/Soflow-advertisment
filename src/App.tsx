@@ -64,11 +64,11 @@ export function App() {
     }
   };
   return (
-    <div className="min-h-screen w-screen bg-[#020810] flex items-center justify-center p-0 font-sans overflow-hidden">
-      {/* Samsung OM55N-DS (1920x1080) Floorstand Dual - Full viewport */}
-      <div className="w-full h-full min-h-screen max-w-[1920px] overflow-hidden relative bg-[#050d1a] shadow-[0_0_50px_rgba(0,229,195,0.1)]">
+    <div className="min-h-[100dvh] min-h-screen w-full bg-[#020810] p-0 font-sans overflow-x-hidden">
+      {/* 32" 4K UHD touch +1920 signage — use full width up to 4K */}
+      <div className="relative mx-auto w-full min-h-[100dvh] min-h-screen max-w-[3840px] bg-[#050d1a] shadow-[0_0_50px_rgba(0,229,195,0.1)] overflow-x-hidden">
         {/* Ambient Gradient Overlay */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden min-h-[100dvh]">
           <div className="absolute -top-[20%] -left-[20%] w-[70%] h-[70%] rounded-full bg-[#00E5C3] opacity-[0.03] blur-[100px]" />
           <div className="absolute top-[40%] -right-[20%] w-[60%] h-[60%] rounded-full bg-[#FF6B4A] opacity-[0.03] blur-[100px]" />
         </div>
@@ -81,8 +81,7 @@ export function App() {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="absolute inset-0 w-full h-full z-10">
-            
+            className="relative z-10 w-full min-h-[100dvh] min-h-screen">
             {renderScreen()}
           </motion.div>
         </AnimatePresence>
