@@ -78,3 +78,40 @@ input[type='radio'] {
     font-size: clamp(18px, 0.55vh + 10px, 26px);
   }
 }
+
+/* Products gallery: one-shot shine on hover (does not cover coral — clipped to frame) */
+@keyframes product-card-shine {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(120%) skewX(-12deg);
+  }
+}
+
+.products-card-shine {
+  animation: product-card-shine 0.85s ease-out both;
+  animation-play-state: paused;
+}
+
+.group:hover .products-card-shine,
+.group:focus-visible .products-card-shine {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .products-card-shine {
+    animation: none !important;
+  }
+}
+
+/* Soft drifting glow for WYSIWYG page background */
+@keyframes products-blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(3%, -2%) scale(1.05);
+  }
+}

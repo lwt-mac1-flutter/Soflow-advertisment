@@ -284,11 +284,11 @@ export function MainScreen({ onNavigate }: ScreenProps) {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.55 }}>
-                <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.35em] text-[#00E5C3] floor:text-xs">
-                  <span className="h-px w-8 bg-gradient-to-r from-[#00E5C3] to-transparent" aria-hidden />
+                <p className="mb-3 inline-flex items-center gap-2.5 text-xs font-black uppercase tracking-[0.3em] text-[#00E5C3] sm:text-sm sm:tracking-[0.32em] signage:text-sm floor:text-base floor:tracking-[0.28em] display4k:text-lg">
+                  <span className="h-px w-10 sm:w-12 bg-gradient-to-r from-[#00E5C3] to-transparent" aria-hidden />
                   Soflow experience
                 </p>
-                <h1 className="max-w-[18ch] text-3xl font-black leading-[1.05] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)] signage:text-4xl floor:text-5xl display4k:text-6xl">
+                <h1 className="max-w-[20ch] text-4xl font-black leading-[1.05] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)] sm:text-5xl sm:max-w-[22ch] signage:text-5xl floor:text-6xl floor:max-w-[24ch] display4k:text-7xl display4k:max-w-[26ch]">
                   Premium{' '}
                   <span className="bg-gradient-to-r from-[#00E5C3] via-white to-[#FF6B4A] bg-clip-text text-transparent">
                     marine life
@@ -296,7 +296,7 @@ export function MainScreen({ onNavigate }: ScreenProps) {
                   <br />
                   <span className="text-white/90">for serious retailers.</span>
                 </h1>
-                <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-white/60 signage:text-base floor:text-lg display4k:text-xl">
+                <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-white/65 sm:text-lg sm:leading-relaxed signage:text-lg floor:mt-6 floor:text-xl floor:leading-relaxed display4k:mt-7 display4k:max-w-3xl display4k:text-2xl display4k:leading-relaxed">
                   Sustainably sourced corals and livestock—transparent origins, wholesale-only access,
                   and a catalog built for your showroom floor.
                 </p>

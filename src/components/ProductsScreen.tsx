@@ -1,362 +1,308 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Filter, Search, Shell, Sparkles, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronRight, ChevronUp, Info, Shell, Sparkles, X } from 'lucide-react';
 import { ScreenProps } from '../types';
 import { BackButton } from './BackButton';
-import {
-  products,
-  Product,
-  getCategoryCounts,
-  formatProductPrice
-} from '../data/products';
-import { categoryLabel } from '../data/categories';
+import { products, Product } from '../data/products';
 
-const PRICE_BUCKETS = [
-  { id: 'all', label: 'All prices', test: () => true },
-  { id: 'u250', label: 'Under $250', test: (v: number) => v < 250 },
-  { id: '250-600', label: '$250 – $600', test: (v: number) => v >= 250 && v < 600 },
-  { id: '600-1200', label: '$600 – $1,200', test: (v: number) => v >= 600 && v < 1200 },
-  { id: '1200p', label: '$1,200+', test: (v: number) => v >= 1200 }
-] as const;
+const tileVariants = {
+  hidden: { opacity: 0, y: 28, scale: 0.98 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 400,
+      damping: 32,
+      delay: (typeof i === 'number' ? i : 0) * 0.05
+    }
+  })
+};
 
-function ProductCard({
+function splitProductName(name: string): { primary: string; secondary: string | null } {
+  const parts = name.split(' — ').map((p) => p.trim());
+  if (parts.length >= 2) {
+    return { primary: parts[0] ?? name, secondary: parts.slice(1).join(' — ') };
+  }
+  return { primary: name, secondary: null };
+}
+
+function GalleryTile({
   product,
+  index,
+  onSelect
+}: {
+  product: Product;
+  index: number;
+  onSelect: (product: Product) => void;
+}) {
+  const { primary, secondary } = useMemo(() => splitProductName(product.name), [product.name]);
+  const n = String(index + 1).padStart(2, '0');
+
+  return (
+    <motion.button
+      type="button"
+      custom={index}
+      variants={tileVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover={{ y: -6, transition: { type: 'spring', stiffness: 420, damping: 28 } }}
+      whileTap={{ scale: 0.99 }}
+      onClick={() => onSelect(product)}
+      className="group relative w-full text-left">
+      {/* Gradient frame — intensifies on hover */}
+      <div
+        className="rounded-2xl bg-gradient-to-br from-white/[0.12] via-[#0a1524] to-white/[0.08] p-px shadow-[0_4px_0_rgba(0,0,0,0.2)] transition-all duration-500 group-hover:from-[#FF6B4A]/50 group-hover:via-[#0d1828] group-hover:to-[#00E5C3]/45 group-hover:shadow-[0_12px_40px_rgba(0,229,195,0.12)]">
+        <div className="overflow-hidden rounded-[0.9rem] bg-[#04070c]">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#080d14] sm:aspect-[3/2]">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="h-full w-full object-contain object-center p-1.5 transition duration-700 ease-out sm:p-2 group-hover:scale-[1.03]"
+              loading="lazy"
+              decoding="async"
+            />
+            {/* Shine sweep — does not dim the photo */}
+            <div
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              aria-hidden>
+              <div className="products-card-shine absolute -left-1/2 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            </div>
+            <div
+              className="pointer-events-none absolute left-2 top-2 flex h-8 min-w-8 items-center justify-center rounded-lg border border-white/10 bg-[#050a10]/80 px-2 text-[11px] font-black tabular-nums text-white/90 shadow-lg backdrop-blur-sm sm:left-3 sm:top-3 sm:h-9 sm:min-w-9 sm:text-xs">
+              {n}
+            </div>
+          </div>
+
+          <div className="relative border-t border-white/[0.08] bg-gradient-to-b from-[#0a1018] to-[#04070c] px-3 py-3 sm:px-4 sm:py-3.5">
+            <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-[#00E5C3]/40 to-transparent" />
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-extrabold leading-snug tracking-tight text-white sm:text-base">
+                  {primary}
+                </p>
+                {secondary ? (
+                  <p className="mt-1 text-[13px] font-medium leading-snug text-[#6ee7d8]/95 sm:text-sm">
+                    {secondary}
+                  </p>
+                ) : null}
+              </div>
+              <div className="mt-0.5 flex shrink-0 items-center text-[#00E5C3]/50 transition group-hover:text-[#00E5C3]">
+                <span className="text-[10px] font-bold uppercase tracking-widest sm:text-xs">Open</span>
+                <ChevronRight className="h-4 w-4 -translate-y-px sm:h-5 sm:w-5" strokeWidth={2.5} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+function ImageLightbox({
+  product,
+  onClose,
   onNavigate
 }: {
   product: Product;
+  onClose: () => void;
   onNavigate: ScreenProps['onNavigate'];
 }) {
-  const display = formatProductPrice(product);
+  const { primary, secondary } = useMemo(() => splitProductName(product.name), [product.name]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
   return (
-    <motion.article
-      variants={{
-        hidden: { opacity: 0, y: 28 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: {
-            type: 'spring',
-            stiffness: 380,
-            damping: 28
-          }
-        }
-      }}
-      whileHover={{ y: -6, transition: { duration: 0.22 } }}
-      whileTap={{ scale: 0.98 }}
-      className="group relative">
-      <div
-        className="absolute -inset-px rounded-[1.35rem] bg-gradient-to-br from-[#FF6B4A]/25 via-transparent to-[#00E5C3]/20 opacity-60 blur-[1px] transition-opacity group-hover:opacity-100"
-        aria-hidden
-      />
-      <div className="relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/[0.09] bg-[#0a1524]/90 shadow-[0_24px_60px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
-        <div className="relative aspect-[5/4] w-full overflow-hidden sm:aspect-[4/3]">
-          <motion.img
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Enlarged photo: ${product.name}`}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}>
+      <div className="absolute inset-0 bg-[#010407]/90 backdrop-blur-md" aria-hidden />
+      <motion.div
+        className="relative z-10 flex max-h-[min(96dvh,1080px)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#060a10] shadow-[0_0_0_1px_rgba(0,229,195,0.12),0_32px_80px_rgba(0,0,0,0.75)]"
+        initial={{ scale: 0.94, y: 16 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 border-b border-white/10 p-3 sm:p-4">
+          <div className="min-w-0 pl-0.5">
+            <h2 className="text-balance text-base font-extrabold text-white sm:text-lg">{primary}</h2>
+            {secondary ? (
+              <p className="mt-0.5 text-sm font-medium text-[#7dd3c0]" lang="la">
+                {secondary}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('product-details', product.id);
+                onClose();
+              }}
+              className="hidden sm:inline-flex touch-manipulation items-center gap-1.5 rounded-xl border border-[#00E5C3]/35 bg-[#00E5C3]/10 px-3 py-2 text-xs font-bold text-[#9ef7e8] transition hover:border-[#00E5C3]/55 hover:bg-[#00E5C3]/15">
+              <Info className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Full details
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="touch-manipulation rounded-xl border border-white/15 p-2 text-white/80 transition hover:border-white/30 hover:bg-white/5 hover:text-white"
+              aria-label="Close">
+              <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
+            </button>
+          </div>
+        </div>
+        <div className="flex min-h-0 flex-1 items-center justify-center bg-black/50 px-2 pb-2 pt-0 sm:px-4 sm:pb-4">
+          <img
             src={product.image}
             alt={product.name}
-            className="h-full w-full object-cover object-center"
-            loading="lazy"
-            whileHover={{ scale: 1.06 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="h-auto w-full max-h-[min(78dvh,900px)] object-contain"
+            style={{ maxWidth: 'min(100%, 1200px)' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050d1a] via-[#050d1a]/25 to-[#00E5C3]/10 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#FF6B4A]/15 opacity-80" />
-
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#050d1a] to-transparent" />
         </div>
-
-        <div className="relative flex flex-1 flex-col gap-3 p-4 signage:p-5">
-          <div className="absolute left-0 top-0 h-1 w-12 rounded-full bg-gradient-to-r from-[#FF6B4A] to-[#00E5C3] opacity-90" />
-
-          <div className="pt-1">
-            <h3 className="text-base font-black leading-tight tracking-tight text-white signage:text-lg">
-              {product.name}
-            </h3>
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="text-lg font-black tracking-tight text-[#FF6B4A] signage:text-xl">
-                {display}
-              </span>
-              {product.compareAtLabel && (
-                <span className="text-sm font-bold text-white/40 line-through">
-                  {product.compareAtLabel}
-                </span>
-              )}
-            </div>
-            <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug text-white/55">
-              {product.desc}
-            </p>
-          </div>
-
+        <div className="border-t border-white/10 p-3 sm:hidden">
           <button
             type="button"
-            onClick={() => onNavigate('product-details', product.id)}
-            className="touch-manipulation mt-auto flex w-full items-center justify-center gap-2 rounded-xl border border-[#00E5C3]/35 bg-gradient-to-r from-[#00E5C3]/12 to-[#FF6B4A]/10 py-3 floor:py-4 text-sm floor:text-base font-bold text-white shadow-[0_0_24px_rgba(0,229,195,0.12)] transition-colors hover:border-[#00E5C3]/55 hover:from-[#00E5C3]/20 min-h-[48px] floor:min-h-[60px] display4k:min-h-[72px] active:scale-[0.99]">
-            View details
-            <ArrowRight className="h-4 w-4 text-[#00E5C3]" strokeWidth={2.5} aria-hidden />
+            onClick={() => {
+              onNavigate('product-details', product.id);
+              onClose();
+            }}
+            className="flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[#00E5C3]/35 bg-[#00E5C3]/10 py-3 text-sm font-bold text-[#9ef7e8]">
+            <Info className="h-4 w-4" strokeWidth={2.5} />
+            Full details & pricing
           </button>
         </div>
-      </div>
-    </motion.article>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export function ProductsScreen({ onNavigate }: ScreenProps) {
-  const [query, setQuery] = useState('');
-  const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
-  const [priceBucket, setPriceBucket] = useState<(typeof PRICE_BUCKETS)[number]['id']>('all');
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
-  const [headerHeight, setHeaderHeight] = useState(280);
+  const [showTop, setShowTop] = useState(false);
+  const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
 
-  const categoryRows = useMemo(() => getCategoryCounts(), []);
-
-  useLayoutEffect(() => {
-    const el = headerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const measure = () => setHeaderHeight(el.getBoundingClientRect().height);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+  const onScroll = useCallback(() => {
+    setShowTop(window.scrollY > 400);
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const bucket = PRICE_BUCKETS.find((b) => b.id === priceBucket) ?? PRICE_BUCKETS[0];
-    return products.filter((p) => {
-      if (selectedCats.size > 0 && !selectedCats.has(p.categoryId)) return false;
-      if (!bucket.test(p.priceValue)) return false;
-      if (!q) return true;
-      const cat = categoryLabel(p.categoryId).toLowerCase();
-      return (
-        p.name.toLowerCase().includes(q) ||
-        p.desc.toLowerCase().includes(q) ||
-        cat.includes(q)
-      );
-    });
-  }, [query, selectedCats, priceBucket]);
-
-  function toggleCategory(id: string) {
-    setSelectedCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function clearFilters() {
-    setSelectedCats(new Set());
-    setPriceBucket('all');
-    setQuery('');
-  }
-
-  const activeFilterCount =
-    selectedCats.size + (priceBucket !== 'all' ? 1 : 0) + (query.trim() ? 1 : 0);
+  useEffect(() => {
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [onScroll]);
 
   return (
-    <div
-      className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-transparent"
-      style={
-        { ['--products-header-h' as string]: `${Math.round(headerHeight)}px` } as React.CSSProperties
-      }>
-      {/*
-        Header sits outside the scroll region so it stays put. Main uses overflow-y-auto so
-        position:sticky on the filter sidebar works (Framer Motion’s transform on the screen
-        wrapper breaks viewport sticky on descendants).
-      */}
-      <header
-        ref={headerRef}
-        className="relative z-30 shrink-0 border-b border-white/[0.08] bg-[#050d1a]/95 px-6 pb-5 pt-6 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#050d1a]/85 signage:px-12 signage:pb-6 signage:pt-8 floor:px-16 display4k:px-24">
-        <div className="mx-auto flex max-w-[1600px] floor:max-w-[2400px] display4k:max-w-[3000px] flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-transparent text-white">
+      <div
+        className="pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full bg-[#00E5C3]/12 blur-[100px] motion-reduce:animate-none"
+        aria-hidden
+        style={{ animation: 'products-blob-drift 22s ease-in-out infinite' }}
+      />
+      <div
+        className="pointer-events-none absolute -right-16 bottom-32 h-72 w-72 rounded-full bg-[#FF6B4A]/10 blur-[100px] motion-reduce:animate-none"
+        style={{ animation: 'products-blob-drift 28s ease-in-out infinite reverse' }}
+        aria-hidden
+      />
+
+      <header className="relative z-20 shrink-0 border-b border-white/[0.08] bg-[#050d1a]/90 px-6 pb-6 pt-6 backdrop-blur-2xl supports-[backdrop-filter]:bg-[#050d1a]/80 signage:px-12 signage:pb-7 signage:pt-8">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#4A9EFF]/25 bg-[#4A9EFF]/10 px-3 py-1">
               <Shell className="h-3.5 w-3.5 text-[#4A9EFF]" strokeWidth={2.5} aria-hidden />
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9ec8ff]">
-                Coral WYSIWYG album
+                Product gallery
               </span>
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-white signage:text-4xl floor:text-5xl display4k:text-6xl">
-              Wholesale{' '}
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl signage:text-5xl">
+              Our{' '}
               <span className="bg-gradient-to-r from-[#FF6B4A] via-[#FFB84D] to-[#00E5C3] bg-clip-text text-transparent">
-                catalog
+                Products
               </span>
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm font-medium text-white/50 signage:text-base floor:text-lg display4k:text-xl">
-              Browse by category like our live album—filters update instantly. Licensed retailers
-              only; scan QR on the main menu to register.
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium text-white/60 signage:text-base">
+              Sum of Our products
             </p>
-            <div className="mt-5 h-1 w-20 rounded-full bg-gradient-to-r from-[#FF6B4A] to-[#00E5C3] shadow-[0_0_16px_rgba(0,229,195,0.4)]" />
-          </div>
-          <div className="flex flex-wrap items-center gap-3 lg:pb-1">
-            <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5">
-              <Sparkles className="h-4 w-4 text-[#FFB84D]" aria-hidden />
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
-                  Listings
-                </p>
-                <p className="text-sm font-bold text-white">{products.length} SKUs</p>
+            <p className="mt-1.5 max-w-2xl text-sm text-white/45">
+              Tap a tile to enlarge the photo, then open full details and pricing.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#00E5C3]/20 bg-[#00E5C3]/5 px-3 py-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-[#00E5C3]" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-[#9ef7e8]">
+                  {products.length} products
+                </span>
               </div>
+              <div className="h-1 w-20 rounded-full bg-gradient-to-r from-[#FF6B4A] to-[#00E5C3] shadow-[0_0_20px_rgba(0,229,195,0.4)]" />
             </div>
+          </div>
+          <div className="w-full shrink-0 sm:w-auto lg:max-w-sm lg:pb-1">
             <BackButton onClick={() => onNavigate('main')} label="Back to Menu" />
           </div>
         </div>
-
-        {/* Search + mobile filter toggle */}
-        <div className="mx-auto mt-6 flex max-w-[1600px] floor:max-w-[2400px] display4k:max-w-[3000px] flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
-              strokeWidth={2.25}
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name, description, category…"
-              className="w-full rounded-2xl border border-white/10 bg-white/[0.06] py-3 floor:py-4 pl-10 floor:pl-12 pr-4 text-sm floor:text-base display4k:text-lg font-medium text-white placeholder:text-white/35 outline-none ring-[#00E5C3]/40 focus:ring-2 min-h-[48px] floor:min-h-[56px]"
-              autoComplete="off"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((o) => !o)}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.08] px-4 py-3 text-sm font-bold text-white sm:hidden">
-            <Filter className="h-4 w-4 text-[#00E5C3]" aria-hidden />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="rounded-full bg-[#FF6B4A] px-2 py-0.5 text-xs font-black text-white">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-        </div>
       </header>
 
-      <main className="relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-4 py-8 signage:px-12 signage:py-10 floor:px-16 display4k:px-24 pb-24 signage:pb-32">
-        <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#00E5C3]/12 blur-[100px]" aria-hidden />
-        <div className="pointer-events-none absolute -right-20 bottom-40 h-64 w-64 rounded-full bg-[#FF6B4A]/10 blur-[90px]" aria-hidden />
-
-        <div className="relative mx-auto flex w-full max-w-[1600px] floor:max-w-[2400px] display4k:max-w-[3000px] flex-col gap-8 lg:flex-row lg:items-start">
-          {/* Sidebar: sticky within <main> scrollport */}
-          <aside
-            className={`lg:sticky lg:top-4 lg:z-20 lg:flex lg:max-h-[min(calc(100dvh-var(--products-header-h,260px)-32px),56rem)] lg:w-72 lg:shrink-0 lg:flex-col lg:self-start floor:lg:w-80 display4k:lg:w-96 ${filtersOpen ? 'flex' : 'hidden'} lg:flex`}>
-            <div className="max-h-[min(70vh,720px)] overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0a1524]/85 p-4 floor:max-h-[min(75vh,900px)] floor:p-5 display4k:p-6 shadow-xl backdrop-blur-xl lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-white/50">
-                  <Filter className="h-3.5 w-3.5 text-[#00E5C3]" aria-hidden />
-                  Filters
-                </h3>
-                {activeFilterCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B4A] hover:text-[#ff8a73]">
-                    Clear all
-                  </button>
-                )}
-              </div>
-
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/35">
-                Price
-              </p>
-              <div className="mb-5 flex flex-col gap-1.5">
-                {PRICE_BUCKETS.map((b) => (
-                  <label
-                    key={b.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white/80 hover:bg-white/[0.05]">
-                    <input
-                      type="radio"
-                      name="price-bucket"
-                      checked={priceBucket === b.id}
-                      onChange={() => setPriceBucket(b.id)}
-                      className="h-4 w-4 accent-[#00E5C3]"
-                    />
-                    {b.label}
-                  </label>
-                ))}
-              </div>
-
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/35">
-                Categories
-              </p>
-              <div className="flex flex-col gap-0.5 pr-1">
-                {categoryRows.map(({ category, count }) => (
-                  <label
-                    key={category.id}
-                    className="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug text-white/75 hover:bg-white/[0.05]">
-                    <input
-                      type="checkbox"
-                      checked={selectedCats.has(category.id)}
-                      onChange={() => toggleCategory(category.id)}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#00E5C3]"
-                    />
-                    <span className="flex-1">
-                      {category.label}
-                      <span
-                        className={`ml-1.5 text-[11px] font-bold tabular-nums ${count === 0 ? 'text-white/25' : 'text-[#00E5C3]/80'}`}>
-                        ({count})
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(false)}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 py-3 text-sm font-bold text-white lg:hidden">
-              <X className="h-4 w-4" aria-hidden />
-              Close filters
-            </button>
-          </aside>
-
-          {/* Grid */}
-          <div className="min-w-0 flex-1">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-[0.28em] text-white/35">
-                  Album grid
-                </h3>
-                <p className="mt-1 text-sm font-semibold text-white/55">
-                  Showing{' '}
-                  <span className="text-white">{filtered.length}</span> of {products.length}
-                </p>
-              </div>
-            </div>
-
-            <motion.div
-              key={`${query}-${[...selectedCats].sort().join(',')}-${priceBucket}`}
-              className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3 2xl:grid-cols-4 floor:gap-7 display4k:grid-cols-5 display4k:gap-8"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.04, delayChildren: 0.04 }
-                }
-              }}
-              initial="hidden"
-              animate="visible">
-              {filtered.map((product) => (
-                <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
-              ))}
-            </motion.div>
-
-            {filtered.length === 0 && (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-8 py-16 text-center">
-                <p className="text-lg font-bold text-white/70">No matches</p>
-                <p className="mt-2 text-sm text-white/45">Try clearing filters or a broader search.</p>
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="mt-6 rounded-xl border border-[#00E5C3]/40 bg-[#00E5C3]/15 px-6 py-3 text-sm font-bold text-[#9ef7e8]">
-                  Reset filters
-                </button>
-              </div>
-            )}
-          </div>
+      <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-4 py-8 signage:px-12 signage:py-10 floor:px-16 scroll-smooth pb-28">
+        <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
+          {products.map((product, index) => (
+            <GalleryTile
+              key={product.id}
+              product={product}
+              index={index}
+              onSelect={setLightboxProduct}
+            />
+          ))}
         </div>
       </main>
+
+      {showTop && !lightboxProduct && (
+        <motion.button
+          type="button"
+          className="fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-[#00E5C3]/40 bg-gradient-to-br from-[#0a1524] to-[#050d1a] text-[#9ef7e8] shadow-[0_0_32px_rgba(0,229,195,0.3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00E5C3] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050d1a]"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 28 }}>
+          <ChevronUp className="h-5 w-5" strokeWidth={2.5} />
+        </motion.button>
+      )}
+
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {lightboxProduct && (
+              <ImageLightbox
+                key={lightboxProduct.id}
+                product={lightboxProduct}
+                onClose={() => setLightboxProduct(null)}
+                onNavigate={onNavigate}
+              />
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type SVGProps } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Star as StarIcon,
@@ -9,28 +9,48 @@ import {
   ChevronRight,
   Building2,
   Quote,
-  Sparkles,
-  Chrome
+  Sparkles
 } from 'lucide-react';
 import { ScreenProps } from '../types';
 import { BackButton } from './BackButton';
 
+/** Google “G” mark (multicolor) — for Google Reviews callouts */
+function GoogleGMark({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden focusable="false" {...props}>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
+/** Google profile photos — `=s400-c` requests a larger square for crisp avatars in the UI */
+const G_AVATAR = {
+  werner:
+    'https://lh3.googleusercontent.com/a-/ALV-UjVUBZUIKn3pxsoXSd6m3VPZrAVoCu-SVEWMhrFoEMMerCDObEjkWA=s400-c',
+  casey:
+    'https://lh3.googleusercontent.com/a-/ALV-UjWfdLHnjMrh9AVnl6idBCMDPxmeBCYimS1W3SQxhMtnXsKvlJSi=s400-c',
+  sarah:
+    'https://lh3.googleusercontent.com/a-/ALV-UjX8-_KuR3rAzxbgzg2rNysvUuPS9tuJ2c7COVArQE8YNQLBWVSx9Q=s400-c'
+} as const;
+
 const testimonials = [
   {
     id: 1,
-    company: 'Werner Wellmann',
-    segment: 'Google Review',
-    region: 'WHOLESALE ONLY!',
-    quote:
-      'The pictures dont describe the real colors, stunning corals! WHOLESALE ONLY!',
-    rating: 5,
-    initials: 'WW',
-    accent: 'from-[#4A9EFF] to-[#00E5C3]',
-    ring: 'ring-[#4A9EFF]/40',
-    glow: 'shadow-[0_0_60px_rgba(74,158,255,0.18)]'
-  },
-  {
-    id: 2,
     company: 'Casey Cameron',
     segment: 'Google Review',
     region: 'Rock Flower fan',
@@ -38,12 +58,13 @@ const testimonials = [
       'Plenty of selection! Excellent customer service. I love the Rock flower anemones. I will be ordering more from here!',
     rating: 5,
     initials: 'CC',
+    avatarUrl: G_AVATAR.casey,
     accent: 'from-[#00E5C3] to-[#4A9EFF]',
     ring: 'ring-[#00E5C3]/40',
     glow: 'shadow-[0_0_60px_rgba(0,229,195,0.15)]'
   },
   {
-    id: 3,
+    id: 2,
     company: 'Sarah Golden',
     segment: 'Google Review',
     region: 'Verified buyer',
@@ -51,11 +72,50 @@ const testimonials = [
       'I appreciate SO MUCH having this as a supplier for my customers.',
     rating: 5,
     initials: 'SG',
+    avatarUrl: G_AVATAR.sarah,
     accent: 'from-[#FF6B4A] to-[#FFB84D]',
     ring: 'ring-[#FF6B4A]/35',
     glow: 'shadow-[0_0_60px_rgba(255,107,74,0.16)]'
+  },
+  {
+    id: 3,
+    company: 'Werner Wellmann',
+    segment: 'Google Review',
+    region: 'WHOLESALE ONLY!',
+    quote:
+      'The pictures dont describe the real colors, stunning corals! WHOLESALE ONLY!',
+    rating: 5,
+    initials: 'WW',
+    avatarUrl: G_AVATAR.werner,
+    accent: 'from-[#4A9EFF] to-[#00E5C3]',
+    ring: 'ring-[#4A9EFF]/40',
+    glow: 'shadow-[0_0_60px_rgba(74,158,255,0.18)]'
   }
 ] as const;
+
+type Testimonial = (typeof testimonials)[number];
+
+function GoogleReviewAvatar({ person, size }: { person: Testimonial; size: 'spotlight' | 'picker' }) {
+  const box =
+    size === 'spotlight'
+      ? 'h-16 w-16 floor:h-20 floor:w-20 rounded-2xl'
+      : 'h-10 w-10 floor:h-12 floor:w-12 rounded-xl';
+  return (
+    <div
+      className={`relative ${box} shrink-0 overflow-hidden border border-white/15 bg-[#0a1524] shadow-inner`}>
+      <img
+        src={person.avatarUrl}
+        alt=""
+        className="h-full w-full object-cover"
+        width={size === 'spotlight' ? 80 : 48}
+        height={size === 'spotlight' ? 80 : 48}
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+}
 
 const stats = [
   {
@@ -239,20 +299,19 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
                 className={`pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gradient-to-br ${active.accent} opacity-[0.15] blur-[70px]`}
                 aria-hidden
               />
+              <GoogleGMark className="pointer-events-none absolute -bottom-4 -right-2 h-36 w-36 opacity-[0.06] sm:h-40 sm:w-40 floor:bottom-0 floor:right-0 floor:h-48 floor:w-48" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050d1a]/90 via-transparent to-transparent" aria-hidden />
 
               <div className="relative flex h-full flex-col p-5 signage:p-7 floor:p-9">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-4">
-                    <div
-                      className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${active.accent} text-lg font-black text-white shadow-lg floor:h-20 floor:w-20 floor:text-xl`}>
-                      {active.initials}
-                    </div>
+                    <GoogleReviewAvatar person={active} size="spotlight" />
                     <div>
                       <h3 className="text-lg font-black text-white floor:text-xl display4k:text-2xl">
                         {active.company}
                       </h3>
-                      <p className="text-xs font-bold uppercase tracking-wider text-white/45 floor:text-sm">
+                      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45 floor:text-sm">
+                        <GoogleGMark className="h-3.5 w-3.5 shrink-0 floor:h-4 floor:w-4" />
                         {active.segment}
                       </p>
                       <p className="mt-0.5 text-[11px] font-medium text-[#00E5C3]/90 floor:text-xs">
@@ -273,8 +332,10 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
                       />
                     ))}
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
-                    <Chrome className="h-3.5 w-3.5 text-[#4A9EFF]" aria-hidden />
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white pl-1.5 pr-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-slate-800 shadow-md shadow-black/20 floor:gap-2.5 floor:pl-2 floor:pr-3.5 floor:py-1.5 floor:text-[10px]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white floor:h-7 floor:w-7">
+                      <GoogleGMark className="h-3.5 w-3.5 floor:h-4 floor:w-4" />
+                    </span>
                     Google Reviews
                   </span>
                 </div>
@@ -334,14 +395,12 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
                       : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]'
                   }`}>
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${t.accent} text-xs font-black text-white floor:h-12 floor:w-12 floor:text-sm`}>
-                      {t.initials}
-                    </div>
+                    <GoogleReviewAvatar person={t} size="picker" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-white floor:text-base">{t.company}</p>
-                      <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-white/40 floor:text-xs">
-                        {t.segment}
+                      <p className="flex min-w-0 items-center gap-1.5 truncate text-[10px] font-semibold uppercase tracking-wide text-white/40 floor:text-xs">
+                        <GoogleGMark className="h-2.5 w-2.5 shrink-0 opacity-80 floor:h-3 floor:w-3" />
+                        <span className="truncate">{t.segment}</span>
                       </p>
                     </div>
                   </div>

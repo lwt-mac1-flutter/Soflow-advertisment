@@ -38,7 +38,7 @@ export function ProductDetailsScreen({ productId, onNavigate }: ProductDetailsSc
     return (
       <div className="flex flex-col min-h-[100dvh] min-h-screen w-full bg-transparent items-center justify-center p-8">
         <p className="text-white/70 text-lg mb-6">Product not found.</p>
-        <BackButton onClick={() => onNavigate('products')} label="Back to Products" />
+        <BackButton onClick={() => onNavigate('products')} label="Back to gallery" />
       </div>
     );
   }
@@ -51,7 +51,7 @@ export function ProductDetailsScreen({ productId, onNavigate }: ProductDetailsSc
           Product Details
         </h2>
         <div className="w-16 h-1 bg-[#FF6B4A] rounded-full mb-6 shadow-[0_0_10px_rgba(255,107,74,0.5)]" />
-        <BackButton onClick={() => onNavigate('products')} label="Back to Products" />
+        <BackButton onClick={() => onNavigate('products')} label="Back to gallery" />
       </div>
 
       <div className="px-4 py-6 signage:px-12 signage:py-8 floor:px-16 display4k:px-24 pb-24 max-w-[1400px] floor:max-w-[2200px] display4k:max-w-[2800px] mx-auto w-full">

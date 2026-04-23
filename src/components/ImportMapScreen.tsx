@@ -10,7 +10,8 @@ import {
   Globe2,
   Route,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Plane
 } from 'lucide-react';
 import { ScreenProps } from '../types';
 import { BackButton } from './BackButton';
@@ -20,6 +21,8 @@ type MarkerTone = 'coral' | 'teal' | 'blue' | 'amber';
 type ImportLocation = {
   id: string;
   name: string;
+  /** Shorter text on the map pin when the full name is too wide */
+  mapLabel?: string;
   top: string;
   left: string;
   tone: MarkerTone;
@@ -51,223 +54,147 @@ const tonePulse: Record<MarkerTone, string> = {
   amber: 'bg-[#FFB84D]'
 };
 
+const SOLE_IMPORTER_DISCLAIMER =
+  'We have agreements to be the sole importers from certain suppliers.';
+
+/** Hub airports — `top` / `left` as % of the map; `label` matches footer / chips */
+const airportHubs = [
+  {
+    id: 'cgk',
+    code: 'CGK',
+    city: 'Jakarta',
+    label: 'Jakarta (CGK)',
+    blurb: 'Indonesia gateway: temp-mapped air freight, short dock time, and full documentation for reef-safe arrivals.',
+    top: '52%',
+    left: '64%'
+  },
+  {
+    id: 'dps',
+    code: 'DPS',
+    city: 'Denpasar',
+    label: 'DPS (Denpasar, Bali)',
+    blurb: 'Bali entry for archipelago exports, interline handoffs, and alignment with farm pack schedules.',
+    top: '65%',
+    left: '86%'
+  },
+  {
+    id: 'bne',
+    code: 'BNE',
+    city: 'Brisbane',
+    label: 'BNE (Brisbane)',
+    blurb: 'Queensland coast hub: health-aware handling and compliance-forward routing for Australian specialty lines.',
+    top: '57%',
+    left: '91%'
+  },
+  {
+    id: 'per',
+    code: 'PER',
+    city: 'Perth',
+    label: 'Perth, Australia (PER)',
+    blurb: 'Western Australia port for vetted interline and domestic connections with careful timing for sensitive loads.',
+    top: '75%',
+    left: '61%'
+  }
+] as const;
+
+const IMPORT_HUB_LINE = airportHubs.map((a) => a.label).join(' · ');
+
+type HubAirport = (typeof airportHubs)[number];
+
 const locations: ImportLocation[] = [
-{
-  id: 'indo',
-  name: 'Indonesia',
-  top: '55%',
-  left: '75%',
+  {
+    id: 'indonesia',
+    name: 'Indonesia',
+    top: '57%',
+    left: '80%',
     tone: 'teal',
-    desc: 'Rich biodiversity, premium cultured corals.',
+    desc: 'Coral-triangle and Indo-Pacific lines—mariculture, wild specialty, and inverts with vetted partners.',
     specialties: [
-      'Maricultured stony corals',
-      'Soft corals & LPS',
-      'Inverts & cleanup crews'
+      'Maricultured SPS & LPS',
+      'Soft corals & cleanup crews',
+      'Export-grade packing out of Java & Bali'
     ],
     waterNote:
-      'Indo-Pacific parameters; a slow acclimation suits most lines we bring in.',
+      'Indo-Pacific parameters; slow drip acclimation and stable alkalinity help color hold.',
     supplyChain:
-      'Air freight with temp-mapped staging, short dock exposure, coordinated arrivals.',
+      'Jakarta and DPS gateways, temp-mapped air freight, short dock time and full documentation.',
     sustainability:
-      'Farm-raised and quota-managed wild stock through vetted partners and clear paperwork.'
-},
-{
-  id: 'fiji',
-  name: 'Fiji',
-  top: '65%',
-  left: '88%',
-    tone: 'coral',
-    desc: 'Famous for vibrant soft corals and live rock.',
-    specialties: [
-      'Soft corals & leathers',
-      'Premium live rock',
-      'Showpiece color morphs'
-    ],
-    waterNote:
-      'Stable alk and oxygen help; ramp flow and light gently in week one.',
-    supplyChain:
-      'Direct routes, cold-style packing, dispatch photos so you see what shipped.',
-    sustainability:
-      'CITES-aligned exports and reef areas co-managed with local villages.'
-},
-{
-  id: 'tonga',
-  name: 'Tonga',
-  top: '68%',
-  left: '92%',
-    tone: 'coral',
-    desc: 'Unique branching and plating species.',
-    specialties: [
-      'Branching Acropora',
-      'Encrusting plates',
-      'Distinct Tongan color lines'
-    ],
-    waterNote:
-      'Keep alk, calcium, and magnesium steady for plating forms and tip color.',
-    supplyChain:
-      'Hub consolidations (e.g. LAX) for predictable handoffs and shorter transit.',
-    sustainability:
-      'Sizing and grading rules plus suppliers with documented ethics.'
-},
-{
-  id: 'aus',
-  name: 'Australia',
-  top: '75%',
-  left: '82%',
+      'We prioritize farm-raised and licensed wild harvest with clear chain of custody from supplier to you.'
+  },
+  {
+    id: 'australia',
+    name: 'Australia',
+    top: '78%',
+    left: '76%',
     tone: 'blue',
-    desc: 'Home to the Great Barrier Reef, strict quotas.',
-    specialties: ['GBR lineages', 'Premium LPS', 'Seasonal rarity lists'],
-    waterNote:
-      'Stable temp and chemistry; ease into full lighting after a calm acclimation day.',
-    supplyChain:
-      'Heavy documentation, optional quarantine and health checks before you receive stock.',
-    sustainability:
-      'Government caps, licensing, and traceability—availability tracks the law.'
-},
-{
-  id: 'redsea',
-  name: 'Red Sea',
-  top: '45%',
-  left: '55%',
-    tone: 'amber',
-    desc: 'Hardy species adapted to high salinity.',
+    desc: 'GBR and Australian specialty lines with strict compliance and health-aware routing.',
     specialties: [
-      'Hardy stony corals',
-      'High-salinity tolerant softies',
-      'Beginner-friendly classics'
+      'Premium Australian LPS & SPS',
+      'Permit-aware sourcing',
+      'Seasonal rarity lists when available'
     ],
     waterNote:
-      'Often fine at slightly higher salinity; drip acclimate slowly into your system.',
+      'Match salinity and temperature closely; allow a calm first day under moderate flow and PAR.',
     supplyChain:
-      'Middle East / EU consolidators into US and EU with tight handoff timing.',
+      'Brisbane (BNE) and Perth (PER) are key entry points, with quarantine and paperwork aligned to regulations.',
     sustainability:
-      'Mariculture and ranching supplement tightly controlled wild harvest.'
-},
-{
-  id: 'hawaii',
-  name: 'Hawaii',
-  top: '50%',
-  left: '15%',
-    tone: 'blue',
-    desc: 'Endemic species and sustainable practices.',
-    specialties: [
-      'Pacific island specialties',
-      'Expert domestic packing',
-      'Short-haul when permitted'
-    ],
-    waterNote:
-      'Steady alk and calcium before you raise PAR or stretch photoperiod.',
-    supplyChain:
-      'Cool packs, breathable insulation, and carrier rules followed exactly.',
-    sustainability:
-      'Compliance-first; many endemics are restricted—stock shifts with law and season.'
+      'Sourcing follows Australian quotas, licensing, and traceability so availability always tracks the law.'
   },
   {
-    id: 'maldives',
-    name: 'Maldives',
-    top: '56%',
-    left: '63%',
-    tone: 'teal',
-    desc: 'Atoll reefs with crystal water and boutique mariculture.',
-    specialties: ['Acropora gardens', 'LPS islands', 'Cleanup & inverts'],
-    waterNote:
-      'Warm, stable reefs—match salinity closely and acclimate slowly from shipping bags.',
-    supplyChain:
-      'Male / Colombo consolidations into EU and US with short connection windows.',
-    sustainability:
-      'Resort-area nurseries and size limits; many lines are farm-raised on local tables.'
-  },
-  {
-    id: 'philippines',
-    name: 'Philippines',
-    top: '49%',
-    left: '81%',
+    id: 'malaysia-kl',
+    name: 'Malaysia (Kuala Lumpur)',
+    mapLabel: 'Malaysia (KL)',
+    top: '44%',
+    left: '75%',
     tone: 'coral',
-    desc: 'Coral Triangle diversity with strong mariculture and wild specialty.',
-    specialties: ['SPS & Acro', 'Softies & zoas', 'Rare LPS'],
+    desc: 'Southeast Asia consolidation—fast links between farms, packers, and our cold chain into North America.',
+    specialties: [
+      'Regional mariculture and specialty frags',
+      'Consolidation for mixed loads',
+      'Rapid re-export coordination'
+    ],
     waterNote:
-      'High biodiversity—watch for pests; dip and observe before aggressive lighting.',
+      'Tropical, stable water profiles—drip new arrivals and confirm nutrients before high light or heavy feeding.',
     supplyChain:
-      'Manila / Cebu export lanes with night flights to keep total travel time predictable.',
+      'KUL and regional air links to align with DPS, Jakarta, and interline schedules for reliable arrivals.',
     sustainability:
-      'Growing farm sector; wild harvest tied to permits and size classes where allowed.'
+      'We work with suppliers who document origin and use responsible harvest or farm-raised stock.'
   },
   {
-    id: 'kenya',
-    name: 'Kenya',
-    top: '59%',
-    left: '57%',
+    id: 'belize',
+    name: 'Belize',
+    top: '43%',
+    left: '25%',
     tone: 'amber',
-    desc: 'Western Indian Ocean fringing reefs with hardy Indo-Pacific species.',
-    specialties: ['Hardy stony corals', 'Soft corals', 'Indian Ocean classics'],
+    desc: 'Western Caribbean sourcing for Atlantic strains and showpiece corals with domestic-friendly routing when cleared.',
+    specialties: [
+      'Caribbean stony and soft corals',
+      'Atlantic inverts and cleanup species',
+      'Seasonal showpiece morphs when permitted'
+    ],
     waterNote:
-      'Warm, energetic water—stable flow and alk help new colonies settle quickly.',
+      'Caribbean chemistry can differ from Pacific—extend acclimation, test often, and adjust alk/Ca/Mg before ramping light.',
     supplyChain:
-      'Nairobi / Mombasa air links into EU hubs; pack lists aligned with CITES paperwork.',
+      'Regional air through approved hubs, Miami connections where applicable, and inspection-ready pack lists.',
     sustainability:
-      'Licensed exporters and seasonal quotas; we favor documented chain of custody.'
-  },
-  {
-    id: 'bahamas',
-    name: 'Bahamas',
-    top: '41%',
-    left: '26%',
-    tone: 'blue',
-    desc: 'Caribbean clarity—stony corals and iconic reef livestock.',
-    specialties: ['Caribbean stony', 'Ricordea & softies', 'Atlantic specialties'],
-    waterNote:
-      'Caribbean chemistry can differ from Pacific—extend acclimation and test often.',
-    supplyChain:
-      'Miami and Nassau routing with domestic US options when stock clears inspection.',
-    sustainability:
-      'Regulated harvest and nursery programs; availability follows federal and local rules.'
-  },
-  {
-    id: 'palau',
-    name: 'Palau',
-    top: '47%',
-    left: '84%',
-    tone: 'teal',
-    desc: 'Micronesian reefs with strict protection and premium rare strains.',
-    specialties: ['Micronesian Acro', 'Unique color lines', 'Protected-area ethics'],
-    waterNote:
-      'Pristine-water genetics—gentle PAR ramps and stable nutrients preserve color.',
-    supplyChain:
-      'Guam / Honolulu hops into mainland US; timing built around weekend arrivals.',
-    sustainability:
-      'Large marine protected areas; legal export only from approved, traceable sources.'
-  },
-  {
-    id: 'vietnam',
-    name: 'Vietnam',
-    top: '50%',
-    left: '72%',
-    tone: 'amber',
-    desc: 'Fast-growing farms and coastal mariculture along the South China Sea.',
-    specialties: ['Farm-raised SPS', 'Cultured LPS', 'Budget-friendly colonies'],
-    waterNote:
-      'Farm lines adapt well; still drip acclimate—farms can run slightly different salinity.',
-    supplyChain:
-      'HCMC / Hanoi consolidations with sea-air combos into major import airports.',
-    sustainability:
-      'Land-based and near-shore farms reduce wild pressure; we favor repeat farm partners.'
+      'We follow licensed exporters and size limits, favoring programs that support reef and nursery recovery.'
   }
 ];
 
 const stats = [
   {
-    label: 'Source regions',
+    label: 'Source countries',
     value: `${locations.length}`,
-    hint: 'Active origins',
+    hint: 'Indonesia · Australia · Malaysia · Belize',
     icon: Globe2,
     color: 'text-[#00E5C3]',
     bg: 'bg-[#00E5C3]/12',
     border: 'border-[#00E5C3]/25'
   },
   {
-    label: 'Trade corridors',
-    value: '24+',
-    hint: 'Air & sea lanes',
+    label: 'Hub airports',
+    value: '4',
+    hint: 'Jakarta · DPS · BNE · Perth',
     icon: Route,
     color: 'text-[#FF6B4A]',
     bg: 'bg-[#FF6B4A]/12',
@@ -324,6 +251,10 @@ function RegionDetailBody({
           {loc.desc}
         </p>
       </div>
+
+      <p className="mt-3 rounded-xl border border-[#4A9EFF]/25 bg-[#4A9EFF]/8 px-3 py-2.5 text-xs font-medium leading-snug text-[#c5ddff] floor:text-sm">
+        {SOLE_IMPORTER_DISCLAIMER}
+      </p>
 
       <div className="mt-4">
         <div className="mb-2 flex items-center gap-2">
@@ -384,6 +315,56 @@ function RegionDetailBody({
   );
 }
 
+const hubChipSelected = 'border-amber-400/50 bg-amber-400/15 text-amber-100 shadow-[0_0_0_1px_rgba(251,191,36,0.35)]';
+
+function AirportDetailBody({
+  ap,
+  onClose
+}: {
+  ap: HubAirport;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <div className="flex items-start gap-3 pr-10">
+        <div
+          className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-400/35 bg-amber-400/10 shadow-[0_0_0_1px_rgba(251,191,36,0.12)]">
+          <Plane className="h-6 w-6 text-amber-200" strokeWidth={2.25} aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-200/90 signage:text-[11px]">
+            Hub airport
+          </p>
+          <h3
+            id="import-airport-title"
+            className="text-xl font-black tracking-tight text-white signage:text-2xl floor:text-3xl">
+            {ap.label}
+          </h3>
+          <p className="mt-0.5 text-xs font-medium text-white/45 floor:text-sm">
+            {ap.code} · {ap.city} · import routing
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3">
+        <p className="text-sm font-medium leading-relaxed text-white/88 signage:text-base">{ap.blurb}</p>
+      </div>
+
+      <p className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/8 px-3 py-2.5 text-xs font-medium leading-snug text-amber-100/90 floor:text-sm">
+        {SOLE_IMPORTER_DISCLAIMER}
+      </p>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-6 flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.06] py-3.5 text-sm font-bold text-white transition-colors hover:bg-white/[0.1] lg:hidden floor:py-4 floor:text-base">
+        Close details
+        <XIcon className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+    </>
+  );
+}
+
 function sidebarContentTransition(reduceMotion: boolean | null) {
   if (reduceMotion) {
     return {
@@ -419,6 +400,7 @@ function sidebarContentTransition(reduceMotion: boolean | null) {
 
 export function ImportMapScreen({ onNavigate }: ScreenProps) {
   const [activeLocation, setActiveLocation] = useState<string | null>(null);
+  const [activeAirportId, setActiveAirportId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const reduceMotion = useReducedMotion();
   const sideTx = sidebarContentTransition(reduceMotion);
@@ -431,9 +413,17 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
     return () => mq.removeEventListener('change', apply);
   }, []);
 
-  const closePanel = useCallback(() => setActiveLocation(null), []);
+  const closePanel = useCallback(() => {
+    setActiveLocation(null);
+    setActiveAirportId(null);
+  }, []);
 
   const active = activeLocation ? locations.find((l) => l.id === activeLocation) : null;
+  const activeAirport = activeAirportId
+    ? airportHubs.find((a) => a.id === activeAirportId) ?? null
+    : null;
+
+  const selectionBump = activeLocation ?? activeAirportId;
 
   return (
     <div className="flex min-h-[100dvh] min-h-screen w-full flex-col bg-transparent">
@@ -450,14 +440,14 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
               </span>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-white signage:text-3xl floor:text-4xl display4k:text-5xl">
-              Global{' '}
+              Where We{' '}
               <span className="bg-gradient-to-r from-[#00E5C3] via-white to-[#4A9EFF] bg-clip-text text-transparent">
-                Sources
+                Import
               </span>
             </h1>
-            <p className="mt-2 max-w-xl text-sm font-medium text-white/50 signage:text-base floor:text-lg">
-              Tap any pin to see specialties, logistics, and how we protect reef health from reef to
-              retailer.
+            <p className="mt-2 max-w-2xl text-sm font-medium text-white/50 signage:text-base floor:text-lg">
+              Indonesia, Australia, Malaysia (Kuala Lumpur), and Belize. Tap a pin for specialties,
+              logistics, and how we acclimate and document every shipment.
             </p>
           </motion.div>
           <div className="w-full shrink-0 lg:max-w-md">
@@ -466,8 +456,7 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 signage:px-10 signage:py-7 floor:max-w-[2200px] floor:px-14 floor:py-8 display4k:max-w-[2800px] display4k:px-20">
-        {/* Stats */}
+      <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col px-4 py-5 signage:px-10 signage:py-7 floor:max-w-[2200px] floor:px-14 floor:py-8 display4k:max-w-[2800px] display4k:px-20">
         <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3 floor:mb-7 floor:gap-4">
           {stats.map((stat) => (
             <div
@@ -509,19 +498,30 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-[#00E5C3]/[0.07] via-transparent to-[#FF6B4A]/[0.06]" />
             <div className="absolute inset-0 bg-gradient-to-b from-[#050d1a] via-transparent to-[#050d1a]/95" />
 
-            <div className="absolute left-4 top-4 z-[5] max-w-[min(90%,280px)] rounded-xl border border-white/10 bg-[#050d1a]/75 px-3 py-2 backdrop-blur-md floor:left-5 floor:top-5 floor:px-4 floor:py-2.5">
+            <div className="absolute left-4 top-4 z-[5] max-w-[min(92%,300px)] rounded-xl border border-white/10 bg-[#050d1a]/75 px-3 py-2 backdrop-blur-md floor:left-5 floor:top-5 floor:px-4 floor:py-2.5">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 floor:text-[10px]">
                 Legend
               </p>
               <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-bold text-white/55 floor:text-[10px]">
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-[#FF6B4A]" /> Pacific hot spots
+                  <span className="h-2 w-2 rounded-full bg-[#00E5C3]" />
+                  Indonesia
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-[#00E5C3]" /> Indo &amp; Indian Ocean
+                  <span className="h-2 w-2 rounded-full bg-[#4A9EFF]" />
+                  Australia
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-[#4A9EFF]" /> Atlantic &amp; domestic
+                  <span className="h-2 w-2 rounded-full bg-[#FF6B4A]" />
+                  Malaysia
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-[#FFB84D]" />
+                  Belize
+                </span>
+                <span className="inline-flex items-center gap-1 text-[#FDE68A]">
+                  <Plane className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
+                  Airport hub
                 </span>
               </div>
         </div>
@@ -536,7 +536,10 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                 transition={{ delay: i * 0.06 + 0.2, type: 'spring', stiffness: 260, damping: 22 }}>
             <motion.button
                   whileTap={{ scale: 0.92 }}
-            onClick={() => setActiveLocation(loc.id)}
+            onClick={() => {
+                    setActiveAirportId(null);
+                    setActiveLocation(loc.id);
+                  }}
                   aria-label={`Open details for ${loc.name}`}
                   className="relative -ml-4 -mt-8 flex min-h-[56px] min-w-[56px] flex-col items-center justify-center touch-manipulation group floor:min-h-[64px] floor:min-w-[64px]">
               <motion.div
@@ -559,10 +562,54 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                     className={`mt-1.5 whitespace-nowrap rounded-full border border-white/15 bg-[#050d1a]/80 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white shadow-lg backdrop-blur-md floor:px-3 floor:text-xs ${
                       activeLocation === loc.id ? 'ring-2 ring-[#00E5C3]/60' : ''
                     }`}>
-                {loc.name}
+                {loc.mapLabel ?? loc.name}
               </span>
             </motion.button>
           </motion.div>
+            ))}
+
+            {airportHubs.map((ap, i) => (
+              <motion.div
+                key={ap.id}
+                className="absolute z-[14]"
+                style={{ top: ap.top, left: ap.left }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  delay: locations.length * 0.06 + 0.35 + i * 0.05,
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 24
+                }}
+                title={`${ap.city} — ${ap.code}`}>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => {
+                    setActiveLocation(null);
+                    setActiveAirportId(ap.id);
+                  }}
+                  aria-pressed={activeAirportId === ap.id}
+                  aria-label={`Open details for ${ap.label}`}
+                  className="relative -ml-3 -mt-3 flex flex-col items-center gap-1 touch-manipulation">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border bg-amber-400/20 shadow-[0_0_20px_rgba(251,191,36,0.35)] backdrop-blur-sm transition-[box-shadow] sm:h-9 sm:w-9 ${
+                      activeAirportId === ap.id
+                        ? 'border-amber-200/90 ring-2 ring-amber-300/70'
+                        : 'border-amber-400/50'
+                    }`}>
+                    <Plane className="h-3.5 w-3.5 text-amber-200 sm:h-4 sm:w-4" strokeWidth={2.5} aria-hidden />
+                  </div>
+                  <span
+                    className={`max-w-[4.75rem] rounded-md border bg-[#050d1a]/90 px-1 py-0.5 text-center text-[7px] font-black leading-tight shadow-md backdrop-blur transition-[box-shadow] sm:max-w-[5.5rem] sm:px-1.5 sm:text-[8px] ${
+                      activeAirportId === ap.id
+                        ? 'border-amber-300/50 text-amber-50 ring-1 ring-amber-400/50'
+                        : 'border-amber-400/25 text-amber-100/95'
+                    }`}>
+                    {ap.code} · {ap.city}
+                  </span>
+                </motion.button>
+              </motion.div>
             ))}
           </div>
 
@@ -583,12 +630,26 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                   }}
                 />
               )}
+              {activeAirport && !active && !reduceMotion && (
+                <motion.div
+                  key={activeAirport.id}
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit]"
+                  initial={{ opacity: 0.9 }}
+                  animate={{ opacity: 0 }}
+                  transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    boxShadow: 'inset 0 0 0 2px rgba(251,191,36,0.45)',
+                    background: 'linear-gradient(90deg, rgba(251,191,36,0.1) 0%, transparent 45%)'
+                  }}
+                />
+              )}
             </AnimatePresence>
 
             <motion.div
               className="relative z-[2] flex min-h-0 flex-1 flex-col"
               initial={false}
-              custom={activeLocation}
+              custom={selectionBump}
               variants={{
                 still: { x: 0 },
                 bump: (id: string | null) => ({
@@ -598,12 +659,20 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
               }}
               animate={reduceMotion ? 'still' : 'bump'}>
               <div className="min-h-[5.5rem] border-b border-white/[0.07] px-5 py-4 floor:min-h-[5.75rem] floor:px-6 floor:py-5">
-                <h2 className="text-xs font-black uppercase tracking-[0.22em] text-white/40 floor:text-sm">
-                  Region details
-                </h2>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.h2
+                    key={active ? 'region' : activeAirport ? 'hub' : 'idle'}
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                    transition={{ duration: 0.22 }}
+                    className="text-xs font-black uppercase tracking-[0.22em] text-white/40 floor:text-sm">
+                    {active ? 'Region details' : activeAirport ? 'Hub airport' : 'Region details'}
+                  </motion.h2>
+                </AnimatePresence>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.p
-                    key={active?.id ?? 'placeholder'}
+                    key={active?.id ?? activeAirport?.id ?? 'placeholder'}
                     initial={
                       reduceMotion
                         ? { opacity: 0 }
@@ -617,7 +686,7 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                     }
                     transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-1 text-sm font-bold text-white floor:text-base">
-                    {active ? active.name : 'Select a source'}
+                    {active ? active.name : activeAirport ? activeAirport.label : 'Select a source'}
                   </motion.p>
                 </AnimatePresence>
               </div>
@@ -632,21 +701,37 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                         className="flex flex-col">
                         <RegionDetailBody loc={active} onClose={closePanel} />
                       </motion.div>
+                    ) : activeAirport ? (
+                      <motion.div
+                        key={activeAirport.id}
+                        {...sideTx.detail}
+                        className="flex flex-col">
+                        <AirportDetailBody ap={activeAirport} onClose={closePanel} />
+                      </motion.div>
                     ) : (
                       <motion.div
                         key="region-list"
                         {...sideTx.list}
-                        className="flex flex-1 flex-col justify-center">
+                        className="flex min-h-0 flex-1 flex-col justify-start">
                         <p className="text-sm leading-relaxed text-white/45 floor:text-base">
-                          Choose a pin on the map or pick a region from the list below to see
-                          specialties, water notes, and logistics.
+                          Choose a pin for Indonesia, Australia, Malaysia (Kuala Lumpur), or
+                          Belize—or open the list. Hub routes include Jakarta, DPS, BNE, and Perth.
                         </p>
-                        <ul className="mt-6 max-h-[min(42vh,420px)] space-y-2 overflow-y-auto pr-1">
+                        <p className="mt-2 text-xs font-medium leading-relaxed text-white/35 floor:text-sm">
+                          {SOLE_IMPORTER_DISCLAIMER}
+                        </p>
+                        <p className="mt-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/35 floor:text-xs">
+                          Jump to region
+                        </p>
+                        <ul className="mt-2 space-y-2">
                           {locations.map((loc) => (
                             <li key={loc.id}>
                 <button
                                 type="button"
-                                onClick={() => setActiveLocation(loc.id)}
+                                onClick={() => {
+                                  setActiveAirportId(null);
+                                  setActiveLocation(loc.id);
+                                }}
                                 className="flex w-full touch-manipulation items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-left text-sm font-semibold text-white transition-colors hover:border-[#00E5C3]/35 hover:bg-white/[0.07]">
                                 <span className="flex items-center gap-2">
                                   <span
@@ -659,13 +744,43 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                             </li>
                           ))}
                         </ul>
+                        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/60 floor:text-xs">
+                          Hub airports
+                        </p>
+                        <ul className="mt-2 max-h-[min(36vh,320px)] space-y-2 overflow-y-auto pr-1">
+                          {airportHubs.map((ap) => (
+                            <li key={ap.id}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveLocation(null);
+                                  setActiveAirportId(ap.id);
+                                }}
+                                className={`flex w-full touch-manipulation items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+                                  activeAirportId === ap.id
+                                    ? `${hubChipSelected} text-white`
+                                    : 'border-amber-400/20 bg-amber-400/5 text-amber-50/95 hover:border-amber-400/40 hover:bg-amber-400/10'
+                                }`}>
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <Plane
+                                    className="h-4 w-4 shrink-0 text-amber-200/90"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                  />
+                                  <span className="truncate">{ap.label}</span>
+                                </span>
+                                <ChevronRight className="h-4 w-4 shrink-0 text-amber-200/40" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
                 <AnimatePresence initial={false}>
-                  {active && (
+                  {(active || activeAirport) && (
                     <motion.div
                       key="clear-footer"
                       initial={
@@ -699,7 +814,10 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
               <button
                 key={loc.id}
                 type="button"
-                onClick={() => setActiveLocation(loc.id)}
+                onClick={() => {
+                  setActiveAirportId(null);
+                  setActiveLocation(loc.id);
+                }}
                 className={`shrink-0 touch-manipulation rounded-full border px-3.5 py-2 text-xs font-bold transition-all floor:px-4 floor:py-2.5 floor:text-sm ${
                   activeLocation === loc.id
                     ? `border-white/25 bg-white/[0.12] text-white ${toneRing[loc.tone]}`
@@ -709,14 +827,54 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
               </button>
             ))}
           </div>
+          <p className="mb-2 mt-5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/55 floor:text-xs">
+            Jump to hub
+          </p>
+          <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 pt-1 [scrollbar-width:thin]">
+            {airportHubs.map((ap) => (
+              <button
+                key={ap.id}
+                type="button"
+                onClick={() => {
+                  setActiveLocation(null);
+                  setActiveAirportId(ap.id);
+                }}
+                className={`shrink-0 touch-manipulation rounded-full border px-3.5 py-2 text-xs font-bold transition-all floor:px-4 floor:py-2.5 floor:text-sm ${
+                  activeAirportId === ap.id
+                    ? hubChipSelected
+                    : 'border-amber-400/20 bg-amber-400/5 text-amber-100/85 hover:border-amber-400/35 hover:bg-amber-400/10'
+                }`}>
+                {ap.code}
+              </button>
+            ))}
+          </div>
         </div>
-                      </div>
 
-      {/* Mobile / tablet modal */}
+        <div className="mt-6 w-full border-t border-white/[0.08] pt-6 floor:mt-auto floor:pt-7">
+          <div className="rounded-2xl border border-white/[0.1] bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-4 shadow-lg backdrop-blur-xl floor:rounded-3xl floor:p-5">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#4A9EFF]/30 bg-[#4A9EFF]/12">
+                <Plane className="h-4 w-4 text-[#4A9EFF]" strokeWidth={2.25} aria-hidden />
+              </div>
+              <h2 className="text-sm font-black uppercase tracking-[0.12em] text-white/60 floor:text-base">
+                Airports
+              </h2>
+            </div>
+            <p className="text-sm font-semibold text-white/90 floor:text-base">
+              {IMPORT_HUB_LINE}
+            </p>
+            <p className="mt-2 border-t border-white/[0.08] pt-3 text-sm font-medium leading-relaxed text-white/60 floor:text-base">
+              {SOLE_IMPORTER_DISCLAIMER}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile / tablet modal — region or hub */}
       <AnimatePresence>
-        {activeLocation && !isDesktop && active && (
+        {!isDesktop && ((active && activeLocation) || activeAirport) && (
           <motion.div
-            key="import-detail"
+            key={active?.id ?? activeAirport?.id ?? 'import-detail'}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -724,14 +882,14 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
             className="fixed inset-0 z-50 flex items-end justify-center sm:items-center lg:hidden">
             <button
               type="button"
-              aria-label="Close region details"
+              aria-label={active ? 'Close region details' : 'Close airport details'}
               className="absolute inset-0 cursor-default border-0 bg-[#020814]/88 backdrop-blur-md"
               onClick={closePanel}
             />
             <motion.div
               role="dialog"
               aria-modal="true"
-              aria-labelledby="import-region-title"
+              aria-labelledby={active ? 'import-region-title' : 'import-airport-title'}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 24 }}
@@ -741,7 +899,14 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
               <div className="sticky top-0 z-10 flex justify-center bg-[#050d1a]/95 py-2 backdrop-blur-md sm:hidden">
                 <div className="h-1 w-10 rounded-full bg-white/20" aria-hidden />
                     </div>
-              <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#FF6B4A] via-[#00E5C3] to-[#4A9EFF]" aria-hidden />
+              <div
+                className={`absolute left-0 top-0 h-full w-1 ${
+                  active
+                    ? 'bg-gradient-to-b from-[#FF6B4A] via-[#00E5C3] to-[#4A9EFF]'
+                    : 'bg-gradient-to-b from-amber-500 via-amber-400/80 to-amber-600/60'
+                }`}
+                aria-hidden
+              />
               <button
                 type="button"
                 onClick={closePanel}
@@ -749,7 +914,11 @@ export function ImportMapScreen({ onNavigate }: ScreenProps) {
                 <XIcon size={22} strokeWidth={2.25} />
               </button>
               <div className="relative p-5 pt-2 sm:p-7 sm:pt-6 floor:p-8">
-                <RegionDetailBody loc={active} onClose={closePanel} />
+                {active && activeLocation ? (
+                  <RegionDetailBody loc={active} onClose={closePanel} />
+                ) : activeAirport ? (
+                  <AirportDetailBody ap={activeAirport} onClose={closePanel} />
+                ) : null}
               </div>
             </motion.div>
           </motion.div>
