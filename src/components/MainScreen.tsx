@@ -6,13 +6,11 @@ import {
   useSpring
 } from 'framer-motion';
 import {
-  Shell as ShellIcon,
+  Fish as ProductsIcon,
   Globe as GlobeIcon,
   ClipboardList as ClipboardListIcon,
   Users as UsersIcon,
-  ChevronRight,
-  Sparkles,
-  Waves
+  ChevronRight
 } from 'lucide-react';
 import { ScreenProps } from '../types';
 import { QRCodePanel } from './QRCodePanel';
@@ -63,7 +61,7 @@ type MenuBlock = {
   id: string;
   title: string;
   subtitle: string;
-  icon: typeof ShellIcon;
+  icon: typeof ProductsIcon;
   color: string;
   bg: string;
   glow: string;
@@ -200,8 +198,8 @@ export function MainScreen({ onNavigate }: ScreenProps) {
     {
       id: 'products',
       title: 'Our Products',
-      subtitle: 'WYSIWYG catalog & pricing',
-      icon: ShellIcon,
+      subtitle: 'Sum of Our products',
+      icon: ProductsIcon,
       color: 'text-[#FF6B4A]',
       bg: 'bg-[#FF6B4A]/12',
       glow: 'shadow-[0_0_40px_rgba(255,107,74,0.25)]',
@@ -225,7 +223,7 @@ export function MainScreen({ onNavigate }: ScreenProps) {
     },
     {
       id: 'register',
-      title: 'How to Register',
+      title: 'Regsister Now',
       subtitle: 'Wholesale portal access',
       icon: ClipboardListIcon,
       color: 'text-[#FFB84D]',
@@ -260,36 +258,17 @@ export function MainScreen({ onNavigate }: ScreenProps) {
       </div>
 
       <header className="relative z-30 border-b border-white/[0.07] bg-[#050d1a]/70 px-4 py-2.5 backdrop-blur-2xl signage:px-10 signage:py-3 floor:px-12 floor:py-3.5 display4k:px-16 display4k:py-4">
-        <div className="mx-auto flex max-w-[1400px] floor:max-w-[2200px] display4k:max-w-[2800px] flex-col items-center gap-2 sm:flex-row sm:justify-between sm:gap-4">
+        <div className="relative mx-auto flex max-w-[1400px] floor:max-w-[2200px] display4k:max-w-[2800px] flex-col items-center justify-center gap-2 sm:gap-4">
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center sm:items-start">
-            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-[#00E5C3]/25 bg-[#00E5C3]/10 px-2.5 py-0.5">
-              <Waves className="h-3 w-3 text-[#00E5C3]" strokeWidth={2.5} aria-hidden />
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#9ef7e8] signage:text-[10px]">
-                Wholesale marine
-              </span>
-            </div>
+            className="flex items-center justify-center px-3 py-1.5">
             <img
               src="/logo.webp"
               alt="Logo"
-              className="h-12 w-auto object-contain sm:h-14 signage:h-16 floor:h-[4.5rem] display4k:h-24 max-w-[min(88vw,420px)]"
+              className="h-16 w-auto object-contain drop-shadow-[0_0_14px_rgba(0,229,195,0.35)] sm:h-20 signage:h-24 floor:h-[6rem] display4k:h-32 max-w-[min(95vw,620px)]"
             />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.15, duration: 0.45 }}
-            className="hidden items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 sm:flex floor:px-4 floor:py-2.5">
-            <Sparkles className="h-4 w-4 shrink-0 text-[#FFB84D]" aria-hidden />
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-white/40">
-                Floor display
-              </p>
-              <p className="text-xs font-bold text-white floor:text-sm">Tap any tile to explore</p>
-            </div>
           </motion.div>
         </div>
       </header>
@@ -297,7 +276,7 @@ export function MainScreen({ onNavigate }: ScreenProps) {
       <section className="relative z-10 -mt-px px-4 pb-2 pt-1.5 signage:px-8 floor:px-12 display4k:px-16">
         <div
           className="relative mx-auto max-w-[1400px] floor:max-w-[2200px] display4k:max-w-[2800px] overflow-hidden rounded-[1.75rem] border border-white/[0.09] bg-[#0a1524]/50 shadow-[0_32px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:rounded-[2rem] floor:rounded-[2.5rem]">
-          <div className="relative h-[min(38vh,480px)] min-h-[220px] floor:h-[min(40vh,520px)] floor:min-h-[300px] display4k:min-h-[340px]">
+          <div className="relative h-[min(72vh,1100px)] min-h-[520px] floor:h-[min(74vh,1200px)] floor:min-h-[660px] display4k:min-h-[780px]">
             <HeroVisual reduceMotion={!!reduceMotion} />
 
             <div className="absolute inset-0 flex flex-col justify-end p-6 signage:p-10 floor:p-12 display4k:p-16">
@@ -387,13 +366,13 @@ export function MainScreen({ onNavigate }: ScreenProps) {
                   strokeWidth={2.25}
                 />
               </motion.div>
-              <h3 className="relative z-10 text-lg font-black leading-tight text-white floor:text-xl display4k:text-2xl">
+              <h3 className="relative z-10 text-xl font-black leading-tight text-white floor:text-2xl display4k:text-3xl">
                 {block.title}
               </h3>
-              <p className="relative z-10 mt-1 text-sm font-semibold text-white/45 floor:text-base">
+              <p className="relative z-10 mt-1 text-base font-semibold text-white/55 floor:text-lg display4k:text-xl">
                 {block.subtitle}
               </p>
-              <div className="relative z-10 mt-auto flex items-center gap-1 pt-4 text-xs font-bold uppercase tracking-wider text-white/35 transition-colors group-hover:text-[#00E5C3] floor:text-sm">
+              <div className="relative z-10 mt-auto flex items-center gap-1 pt-4 text-sm font-bold uppercase tracking-[0.14em] text-white/45 transition-colors group-hover:text-[#00E5C3] floor:text-base display4k:text-lg">
                 Open
                 <motion.span
                   initial={false}

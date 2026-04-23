@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Star as StarIcon,
@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Building2,
   Quote,
-  Sparkles
+  Sparkles,
+  Chrome
 } from 'lucide-react';
 import { ScreenProps } from '../types';
 import { BackButton } from './BackButton';
@@ -17,39 +18,39 @@ import { BackButton } from './BackButton';
 const testimonials = [
   {
     id: 1,
-    company: 'Oceanic Aquariums',
-    segment: 'Multi-store retail',
-    region: 'U.S. · West Coast',
+    company: 'Werner Wellmann',
+    segment: 'Google Review',
+    region: 'WHOLESALE ONLY!',
     quote:
-      'The quality of corals we receive from Soflow is unmatched. Our customers are always blown away by the vibrant colors and health of every piece.',
+      'The pictures dont describe the real colors, stunning corals! WHOLESALE ONLY!',
     rating: 5,
-    initials: 'OA',
+    initials: 'WW',
     accent: 'from-[#4A9EFF] to-[#00E5C3]',
     ring: 'ring-[#4A9EFF]/40',
     glow: 'shadow-[0_0_60px_rgba(74,158,255,0.18)]'
   },
   {
     id: 2,
-    company: 'Reef Builders Inc.',
-    segment: 'Showroom & design',
-    region: 'Canada',
+    company: 'Casey Cameron',
+    segment: 'Google Review',
+    region: 'Rock Flower fan',
     quote:
-      'Consistent sizing, healthy specimens, and incredible support. They are our primary supplier—transparent origins and wholesale pricing we can stand behind.',
+      'Plenty of selection! Excellent customer service. I love the Rock flower anemones. I will be ordering more from here!',
     rating: 5,
-    initials: 'RB',
+    initials: 'CC',
     accent: 'from-[#00E5C3] to-[#4A9EFF]',
     ring: 'ring-[#00E5C3]/40',
     glow: 'shadow-[0_0_60px_rgba(0,229,195,0.15)]'
   },
   {
     id: 3,
-    company: 'Deep Blue Exotics',
-    segment: 'Specialty boutique',
-    region: 'EU · Mediterranean',
+    company: 'Sarah Golden',
+    segment: 'Google Review',
+    region: 'Verified buyer',
     quote:
-      'Sustainable sourcing gives us confidence with our clients. The Australian Acroporas and LPS selections are simply stunning week after week.',
+      'I appreciate SO MUCH having this as a supplier for my customers.',
     rating: 5,
-    initials: 'DB',
+    initials: 'SG',
     accent: 'from-[#FF6B4A] to-[#FFB84D]',
     ring: 'ring-[#FF6B4A]/35',
     glow: 'shadow-[0_0_60px_rgba(255,107,74,0.16)]'
@@ -59,7 +60,7 @@ const testimonials = [
 const stats = [
   {
     label: 'Partner stores',
-    value: '500+',
+    value: '750+',
     hint: 'Licensed retailers',
     icon: UsersIcon,
     color: 'text-[#FF6B4A]',
@@ -68,8 +69,8 @@ const stats = [
   },
   {
     label: 'Regions served',
-    value: '30+',
-    hint: 'Import corridors',
+    value: 'Delivery all over USA',
+    hint: 'Nationwide coverage · Serve Globally',
     icon: GlobeIcon,
     color: 'text-[#00E5C3]',
     bg: 'bg-[#00E5C3]/12',
@@ -176,7 +177,12 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
                 <div className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl ${stat.bg} floor:h-14 floor:w-14`}>
                   <stat.icon className={`h-5 w-5 floor:h-6 floor:w-6 ${stat.color}`} strokeWidth={2.25} aria-hidden />
                 </div>
-                <div className={`text-3xl font-black tabular-nums ${stat.color} floor:text-4xl display4k:text-5xl`}>
+                <div
+                  className={`font-black ${stat.color} ${
+                    stat.value.length > 12
+                      ? 'text-lg leading-tight floor:text-2xl display4k:text-3xl'
+                      : 'text-3xl tabular-nums floor:text-4xl display4k:text-5xl'
+                  }`}>
                   {stat.value}
                 </div>
                 <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/80 floor:text-xs">
@@ -257,14 +263,20 @@ export function CustomersScreen({ onNavigate }: ScreenProps) {
                   <Quote className="h-10 w-10 shrink-0 text-white/[0.08] floor:h-12 floor:w-12" strokeWidth={1.25} aria-hidden />
                 </div>
 
-                <div className="flex gap-0.5">
-                  {[...Array(active.rating)].map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      className="h-5 w-5 fill-[#FFB84D] text-[#FFB84D] drop-shadow-[0_0_8px_rgba(255,184,77,0.35)] floor:h-6 floor:w-6"
-                      aria-hidden
-                    />
-                  ))}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex gap-0.5">
+                    {[...Array(active.rating)].map((_, i) => (
+                      <StarIcon
+                        key={i}
+                        className="h-5 w-5 fill-[#FFB84D] text-[#FFB84D] drop-shadow-[0_0_8px_rgba(255,184,77,0.35)] floor:h-6 floor:w-6"
+                        aria-hidden
+                      />
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
+                    <Chrome className="h-3.5 w-3.5 text-[#4A9EFF]" aria-hidden />
+                    Google Reviews
+                  </span>
                 </div>
 
                 <div className="relative mt-5 flex-1">
