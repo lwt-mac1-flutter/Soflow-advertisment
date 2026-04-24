@@ -1,0 +1,415 @@
+import { useCallback, useEffect, useState, type SVGProps } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import {
+  Star as StarIcon,
+  Users as UsersIcon,
+  Globe as GlobeIcon,
+  Award as AwardIcon,
+  ChevronLeft,
+  ChevronRight,
+  Building2,
+  Quote,
+  Sparkles
+} from 'lucide-react';
+import { ScreenProps } from '../types';
+import { BackButton } from './BackButton';
+
+/** Google “G” mark (multicolor) — for Google Reviews callouts */
+function GoogleGMark({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden focusable="false" {...props}>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
+/** Google profile photos — `=s400-c` requests a larger square for crisp avatars in the UI */
+const G_AVATAR = {
+  werner:
+    'https://lh3.googleusercontent.com/a-/ALV-UjVUBZUIKn3pxsoXSd6m3VPZrAVoCu-SVEWMhrFoEMMerCDObEjkWA=s400-c',
+  casey:
+    'https://lh3.googleusercontent.com/a-/ALV-UjWfdLHnjMrh9AVnl6idBCMDPxmeBCYimS1W3SQxhMtnXsKvlJSi=s400-c',
+  sarah:
+    'https://lh3.googleusercontent.com/a-/ALV-UjX8-_KuR3rAzxbgzg2rNysvUuPS9tuJ2c7COVArQE8YNQLBWVSx9Q=s400-c'
+} as const;
+
+const testimonials = [
+  {
+    id: 1,
+    company: 'Casey Cameron',
+    segment: 'Google Review',
+    region: 'Rock Flower fan',
+    quote:
+      'Plenty of selection! Excellent customer service. I love the Rock flower anemones. I will be ordering more from here!',
+    rating: 5,
+    initials: 'CC',
+    avatarUrl: G_AVATAR.casey,
+    accent: 'from-[#00E5C3] to-[#4A9EFF]',
+    ring: 'ring-[#00E5C3]/40',
+    glow: 'shadow-[0_0_60px_rgba(0,229,195,0.15)]'
+  },
+  {
+    id: 2,
+    company: 'Sarah Golden',
+    segment: 'Google Review',
+    region: 'Verified buyer',
+    quote:
+      'I appreciate SO MUCH having this as a supplier for my customers.',
+    rating: 5,
+    initials: 'SG',
+    avatarUrl: G_AVATAR.sarah,
+    accent: 'from-[#FF6B4A] to-[#FFB84D]',
+    ring: 'ring-[#FF6B4A]/35',
+    glow: 'shadow-[0_0_60px_rgba(255,107,74,0.16)]'
+  },
+  {
+    id: 3,
+    company: 'Werner Wellmann',
+    segment: 'Google Review',
+    region: 'WHOLESALE ONLY!',
+    quote:
+      'The pictures dont describe the real colors, stunning corals! WHOLESALE ONLY!',
+    rating: 5,
+    initials: 'WW',
+    avatarUrl: G_AVATAR.werner,
+    accent: 'from-[#4A9EFF] to-[#00E5C3]',
+    ring: 'ring-[#4A9EFF]/40',
+    glow: 'shadow-[0_0_60px_rgba(74,158,255,0.18)]'
+  }
+] as const;
+
+type Testimonial = (typeof testimonials)[number];
+
+function GoogleReviewAvatar({ person, size }: { person: Testimonial; size: 'spotlight' | 'picker' }) {
+  const box =
+    size === 'spotlight'
+      ? 'h-16 w-16 floor:h-20 floor:w-20 rounded-2xl'
+      : 'h-10 w-10 floor:h-12 floor:w-12 rounded-xl';
+  return (
+    <div
+      className={`relative ${box} shrink-0 overflow-hidden border border-white/15 bg-[#0a1524] shadow-inner`}>
+      <img
+        src={person.avatarUrl}
+        alt=""
+        className="h-full w-full object-cover"
+        width={size === 'spotlight' ? 80 : 48}
+        height={size === 'spotlight' ? 80 : 48}
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+}
+
+const stats = [
+  {
+    label: 'Partner stores',
+    value: '750+',
+    hint: 'Licensed retailers',
+    icon: UsersIcon,
+    color: 'text-[#FF6B4A]',
+    bg: 'bg-[#FF6B4A]/12',
+    border: 'border-[#FF6B4A]/25'
+  },
+  {
+    label: 'Regions served',
+    value: 'Delivery all over USA',
+    hint: 'Nationwide coverage · Serve Globally',
+    icon: GlobeIcon,
+    color: 'text-[#00E5C3]',
+    bg: 'bg-[#00E5C3]/12',
+    border: 'border-[#00E5C3]/25'
+  },
+  {
+    label: 'Years wholesale',
+    value: '10+',
+    hint: 'Marine specialty',
+    icon: AwardIcon,
+    color: 'text-[#4A9EFF]',
+    bg: 'bg-[#4A9EFF]/12',
+    border: 'border-[#4A9EFF]/25'
+  }
+] as const;
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.06 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 280, damping: 28 }
+  }
+};
+
+export function CustomersScreen({ onNavigate }: ScreenProps) {
+  const reduceMotion = useReducedMotion();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const go = useCallback(
+    (dir: -1 | 1) => {
+      setCurrentIndex((prev) => {
+        const next = prev + dir;
+        if (next < 0) return testimonials.length - 1;
+        if (next >= testimonials.length) return 0;
+        return next;
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+    }, 6500);
+    return () => clearInterval(timer);
+  }, [reduceMotion]);
+
+  const active = testimonials[currentIndex];
+
+  return (
+    <div className="flex min-h-[100dvh] min-h-screen w-full flex-col bg-transparent">
+      <header className="relative z-20 border-b border-white/[0.08] bg-[#050d1a]/70 px-4 py-4 backdrop-blur-2xl signage:px-10 signage:py-5 floor:px-14 floor:py-6 display4k:px-20">
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 floor:max-w-[2200px] display4k:max-w-[2800px] lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#4A9EFF]/30 bg-[#4A9EFF]/10 px-3 py-1">
+              <Sparkles className="h-3.5 w-3.5 text-[#4A9EFF]" strokeWidth={2.5} aria-hidden />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#9ec5ff] signage:text-[10px]">
+                Partner stories
+              </span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-white signage:text-3xl floor:text-4xl display4k:text-5xl">
+              Our{' '}
+              <span className="bg-gradient-to-r from-[#4A9EFF] via-[#00E5C3] to-[#FF6B4A] bg-clip-text text-transparent">
+                Customers
+              </span>
+            </h1>
+            <p className="mt-2 max-w-xl text-sm font-medium text-white/50 signage:text-base floor:text-lg">
+              Wholesale retailers who build showrooms and reputations on healthy livestock and honest sourcing.
+            </p>
+          </motion.div>
+          <div className="w-full shrink-0 lg:max-w-md">
+            <BackButton onClick={() => onNavigate('main')} />
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 signage:px-10 signage:py-8 floor:max-w-[2200px] floor:px-14 floor:py-10 display4k:max-w-[2800px] display4k:px-20 display4k:py-12">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid gap-5 floor:gap-7 lg:grid-cols-12 lg:gap-8">
+          {/* Stats bento */}
+          <motion.div
+            variants={itemVariants}
+            className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-12 lg:gap-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className={`relative overflow-hidden rounded-2xl border ${stat.border} bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-4 shadow-lg backdrop-blur-xl floor:rounded-3xl floor:p-5`}>
+                <div className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl ${stat.bg} floor:h-14 floor:w-14`}>
+                  <stat.icon className={`h-5 w-5 floor:h-6 floor:w-6 ${stat.color}`} strokeWidth={2.25} aria-hidden />
+                </div>
+                <div
+                  className={`font-black ${stat.color} ${
+                    stat.value.length > 12
+                      ? 'text-lg leading-tight floor:text-2xl display4k:text-3xl'
+                      : 'text-3xl tabular-nums floor:text-4xl display4k:text-5xl'
+                  }`}>
+                  {stat.value}
+                </div>
+                <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/80 floor:text-xs">
+                  {stat.label}
+                </div>
+                <p className="mt-0.5 text-[11px] font-medium text-white/40 floor:text-sm">{stat.hint}</p>
+                <div
+                  className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/[0.04] blur-2xl"
+                  aria-hidden
+                />
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Left column — trust copy */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col justify-between rounded-[1.75rem] border border-white/[0.09] bg-[#0a1524]/60 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.35)] backdrop-blur-md signage:p-7 lg:col-span-5 floor:rounded-[2rem] floor:p-8">
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-[#00E5C3]">
+                <Building2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/45 floor:text-xs">
+                  Built for retailers
+                </span>
+              </div>
+              <h2 className="text-xl font-black leading-snug text-white floor:text-2xl display4k:text-3xl">
+                Trusted by serious aquatic businesses
+              </h2>
+              <ul className="mt-5 space-y-3 text-sm font-medium leading-relaxed text-white/55 floor:text-base">
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#00E5C3]" aria-hidden />
+                  Consistent grading, acclimation notes, and origin transparency on every shipment.
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF6B4A]" aria-hidden />
+                  Dedicated wholesale support—not a consumer checkout dressed up as B2B.
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#4A9EFF]" aria-hidden />
+                  Partners from single showrooms to multi-door chains across North America &amp; Europe.
+                </li>
+              </ul>
+            </div>
+            <p className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-xs font-semibold text-white/45 floor:text-sm">
+              Stories rotate automatically—use arrows or tap a partner card to jump.
+            </p>
+          </motion.div>
+
+          {/* Spotlight + carousel */}
+          <motion.div variants={itemVariants} className="flex flex-col gap-4 lg:col-span-7">
+            <div
+              className={`relative min-h-[280px] overflow-hidden rounded-[1.75rem] border border-white/[0.1] bg-gradient-to-br from-white/[0.07] to-white/[0.02] ring-1 ${active.ring} ${active.glow} backdrop-blur-xl floor:min-h-[320px] floor:rounded-[2rem] display4k:min-h-[380px]`}>
+              <div
+                className={`pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gradient-to-br ${active.accent} opacity-[0.15] blur-[70px]`}
+                aria-hidden
+              />
+              <GoogleGMark className="pointer-events-none absolute -bottom-4 -right-2 h-36 w-36 opacity-[0.06] sm:h-40 sm:w-40 floor:bottom-0 floor:right-0 floor:h-48 floor:w-48" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050d1a]/90 via-transparent to-transparent" aria-hidden />
+
+              <div className="relative flex h-full flex-col p-5 signage:p-7 floor:p-9">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-4">
+                    <GoogleReviewAvatar person={active} size="spotlight" />
+                    <div>
+                      <h3 className="text-lg font-black text-white floor:text-xl display4k:text-2xl">
+                        {active.company}
+                      </h3>
+                      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45 floor:text-sm">
+                        <GoogleGMark className="h-3.5 w-3.5 shrink-0 floor:h-4 floor:w-4" />
+                        {active.segment}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-medium text-[#00E5C3]/90 floor:text-xs">
+                        {active.region}
+                      </p>
+                    </div>
+                  </div>
+                  <Quote className="h-10 w-10 shrink-0 text-white/[0.08] floor:h-12 floor:w-12" strokeWidth={1.25} aria-hidden />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex gap-0.5">
+                    {[...Array(active.rating)].map((_, i) => (
+                      <StarIcon
+                        key={i}
+                        className="h-5 w-5 fill-[#FFB84D] text-[#FFB84D] drop-shadow-[0_0_8px_rgba(255,184,77,0.35)] floor:h-6 floor:w-6"
+                        aria-hidden
+                      />
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white pl-1.5 pr-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-slate-800 shadow-md shadow-black/20 floor:gap-2.5 floor:pl-2 floor:pr-3.5 floor:py-1.5 floor:text-[10px]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white floor:h-7 floor:w-7">
+                      <GoogleGMark className="h-3.5 w-3.5 floor:h-4 floor:w-4" />
+                    </span>
+                    Google Reviews
+                  </span>
+                </div>
+
+                <div className="relative mt-5 flex-1">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.blockquote
+                      key={active.id}
+                      initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, y: -10 }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      className="text-base font-medium leading-relaxed text-white/90 signage:text-lg floor:text-xl display4k:text-2xl">
+                      {active.quote}
+                    </motion.blockquote>
+                  </AnimatePresence>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between gap-3 border-t border-white/[0.08] pt-4">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
+                    {currentIndex + 1} / {testimonials.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.94 }}
+                      onClick={() => go(-1)}
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.12] bg-white/[0.06] text-white transition-colors hover:bg-white/[0.1] floor:h-14 floor:w-14 touch-manipulation"
+                      aria-label="Previous testimonial">
+                      <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.94 }}
+                      onClick={() => go(1)}
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.12] bg-white/[0.06] text-white transition-colors hover:bg-white/[0.1] floor:h-14 floor:w-14 touch-manipulation"
+                      aria-label="Next testimonial">
+                      <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Partner picker cards */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {testimonials.map((t, i) => (
+                <motion.button
+                  key={t.id}
+                  type="button"
+                  layout
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`touch-manipulation rounded-2xl border p-4 text-left transition-all floor:rounded-3xl floor:p-5 ${
+                    i === currentIndex
+                      ? `border-white/20 bg-white/[0.1] ring-2 ${t.ring}`
+                      : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]'
+                  }`}>
+                  <div className="flex items-center gap-3">
+                    <GoogleReviewAvatar person={t} size="picker" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-white floor:text-base">{t.company}</p>
+                      <p className="flex min-w-0 items-center gap-1.5 truncate text-[10px] font-semibold uppercase tracking-wide text-white/40 floor:text-xs">
+                        <GoogleGMark className="h-2.5 w-2.5 shrink-0 opacity-80 floor:h-3 floor:w-3" />
+                        <span className="truncate">{t.segment}</span>
+                      </p>
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
